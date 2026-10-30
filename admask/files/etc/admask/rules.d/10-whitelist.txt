@@ -1,0 +1,332 @@
+! AdMask 白名单 (信任放行)
+! 修改请通过 LuCI 界面 → 黑白名单，或手动编辑本文件
+!
+! 语法：@@||domain^ 表示信任放行该域名及其所有子域
+!      @@||domain/path^ 表示只放行特定路径
+!
+! 优先级：白名单恒优先于黑名单与订阅规则（urlfilter 自动处理）
+!
+! 修改后需重启 AdMask：/etc/init.d/admask restart
+!
+! ⚠️ 白名单是「信任放行」规则，用于防止安全网关（AdMask）
+!    在深度检测威胁时，误伤家庭网络中的正常核心业务（如银行交易、
+!    政务办理、在线教育、网盘下载等）。
+!    预置具体域名是为了保障家庭网络的正常运转。如发现某条规则
+!    放行了恶意脚本，直接注释掉即可。
+
+! ============================================================
+! 特殊放行（腾讯视频特定接口，防止反广告检测）
+! ============================================================
+@@||vd6.l.qq.com^
+@@||aegis.qq.com^
+@@||p.l.qq.com^
+@@||galileotelemetry.tencent.com^
+@@||v.qq.com^
+
+! ============================================================
+! 金融支付 (Financial & Banking)
+! ============================================================
+! 用途：放行网银、支付网关、信用卡中心，防止安全网关误杀导致无法支付
+
+! 中国工商银行
+@@||icbc.com.cn^
+@@||95588.com.cn^
+
+! 中国建设银行
+@@||ccb.com^
+@@||ibsbjstar.ccb.com.cn^
+
+! 中国农业银行
+@@||abchina.com^
+
+! 中国银行
+@@||boc.cn^
+
+! 交通银行
+@@||bankcomm.com^
+
+! 招商银行
+@@||cmbchina.com^
+
+! 光大银行
+@@||cebbank.com^
+
+! 浦发银行
+@@||spdb.com.cn^
+
+! 中信银行
+@@||citicbank.com^
+
+! 支付宝 / 微信支付
+@@||mygw.alipay.com^
+@@||pay.weixin.qq.com^
+
+! PayPal
+@@||api-m.paypal.com^
+@@||paypal.com^
+
+! ============================================================
+! 政务 / 医疗 / 公共服务 (Government & Public Service)
+! ============================================================
+! 用途：放行政府服务、医疗挂号、社保查询、交通出行
+
+@@||gov.cn^
+@@||12306.cn^
+@@||12345.gov.cn^
+@@||chinacdc.cn^
+@@||nhc.gov.cn^
+
+! 税务
+@@||chinatax.gov.cn^
+
+! 社保 / 公积金
+@@||12333.gov.cn^
+@@||zfgjj.gov.cn^
+
+! ============================================================
+! 邮箱 / 企业通讯 (Email & Messaging)
+! ============================================================
+! 用途：放行邮件收发、附件下载，避免邮件正文被安全策略误杀
+
+! 国内邮箱
+@@||mail.sina.com.cn^
+@@||126.com^
+@@||163.com^
+@@||netease.com^
+@@||mail.qq.com^
+@@||mail.aliyun.com^
+
+! 国际邮箱
+@@||mail.google.com^
+@@||gmail.com^
+@@||outlook.live.com^
+@@||outlook.office.com^
+@@||protonmail.com^
+
+! ============================================================
+! 网盘 / 云存储 (Cloud Storage)
+! ============================================================
+! 用途：放行网盘登录、下载、上传、分享，保障大文件传输不被阻断
+
+! 115 网盘
+@@||uplb.115.com^
+@@||home.115.com^
+@@||webapi.115.com^
+@@||115.com^
+@@||cdnres.115.com^
+@@||fhnfile.oss-cn-shenzhen.aliyuncs.com^
+
+! 百度网盘
+@@||pan.baidu.com^
+@@||d.pcs.baidu.com^
+
+! 阿里云盘
+@@||aliyundrive.com^
+@@||aliyunpan.com^
+@@||api.aliyundrive.com^
+
+! 腾讯微云
+@@||weiyun.com^
+@@||weiyun.com/api^
+
+! 坚果云
+@@||jianguoyun.com^
+@@||nutstore.net^
+
+! Google Drive
+@@||drive.google.com^
+@@||photos.googleapis.com^
+@@||console.cloud.google.com^
+@@||clients6.google.com^
+
+! OneDrive
+@@||onedrive.live.com^
+@@||storage.live.com^
+
+! AWS S3
+@@||s3.amazonaws.com^
+
+! ============================================================
+! 流媒体 / 视频 CDN (Streaming CDN)
+! ============================================================
+! 用途：放行视频分片 CDN，避免规则误杀导致正片黑屏卡顿
+!
+! ⚠️ 如果已在 video-cdn-passthrough.yaml 中配置直通，
+!    这些域名通常不需要重复添加。此白名单仅用于兜底。
+
+! 优酷 CDN
+@@||ykugc.cp31.ott.cibntv.net^
+@@||ykugc-vip.cp31.ott.cibntv.net^
+@@||pl.cp31.ott.cibntv.net^
+@@||v.smtcdns.net^
+
+! 爱奇艺 CDN（正片路径）
+@@||bdcdncnc.inter.71edge.com/videos/vts/
+@@||71edge.com/videos/vts/
+@@||static-s.iqiyi.com/lequ/pc/lwa/imgs/
+@@||static-s.iqiyi.com/lequ/pc_imgs/
+
+! B 站
+@@||hdslb.com^
+@@||bilivideo.com^
+@@||bilivideo.cn^
+@@||acgvideo.com^
+
+! 芒果 TV
+@@||mgtv.com^
+@@||hunantv.com^
+
+! 腾讯视频
+@@||v.qq.com^
+@@||video.qq.com^
+
+! 直播平台
+@@||p2p.huya.com^
+@@||douyu.com^
+@@||bilibili.com^
+
+! ============================================================
+! 智能设备 / 厂商服务 (IoT & Vendors)
+! ============================================================
+! 用途：放行手机、电视、路由器的系统 OTA 更新与核心推送，
+!       防止智能家居设备因无法连接云端而变砖
+
+! 小米 / MIUI
+@@||api.sec.miui.com^
+@@||cesu.cdn.pandora.xiaomi.com^
+@@||b0.market.xiaomi.com^
+@@||pandora.mi.com^
+@@||tv.aiseet.atianqi.com^
+@@||vv.play.aiseet.atianqi.com^
+@@||e.crashlytics.com^
+
+! 华为
+@@||hicloud.com^
+@@||hwccpc.com^
+
+! 苹果服务
+@@||icloud.com^
+@@||apple.com^
+@@||mzstatic.com^
+
+! ============================================================
+! 电商 / 物流 (E-commerce & Logistics)
+! ============================================================
+! 用途：放行支付、订单、物流查询接口
+
+! 阿里 / 淘宝
+@@||g.alicdn.com^
+@@||img.alicdn.com^
+@@||temai.m.taobao.com^
+
+! 京东
+@@||jd.com^
+@@||3.cn^
+
+! 苏宁
+@@||dcbpm.suning.cn^
+@@||suning.com^
+
+! 大众点评 / 美团
+@@||catdot.dianping.com^
+@@||report.meituan.com^
+@@||api-unionid.meituan.com^
+
+! 物流
+@@||p.kuaidi100.com^
+
+! ============================================================
+! 搜索 / 门户 / 开发工具 (Search & Dev Tools)
+! ============================================================
+! 用途：放行搜索、门户的核心功能接口及开发者依赖下载
+
+! 百度
+@@||passport.baidu.com^
+@@||gss0.bdstatic.com^
+@@||gss1.bdstatic.com^
+@@||ss1.bdstatic.com^
+@@||mime.baidu.com^
+
+! 微信 / QQ
+@@||mmbiz.qpic.cn^
+@@||mp.weixin.qq.com^
+
+! 网易
+@@||urswebzj.nosdn.127.net^
+@@||analytics.163.com^
+
+! 新浪
+@@||sinaimg.cn^
+
+! 豆瓣
+@@||doubanio.com^
+@@||artery.douban.com^
+@@||api.douban.com^
+@@||frodo.douban.com^
+@@||erebor.douban.com^
+
+! 其他门户
+@@||api.ithome.com^
+@@||dyn.ithome.com^
+@@||prod-u.ishuhui.com^
+@@||cdn.jsdelivr.net^
+
+! 搜狗输入法
+@@||config.pinyin.sogou.com^
+
+! 阿里云 AI 服务
+@@||g-aicloud.alibaba.com^
+@@||asr-aicloud.alibaba.com^
+
+! 字节跳动（正常业务接口，非广告）
+@@||api3-normal-c-lq.snssdk.com^
+@@||drop-l-toutiao-lq.snssdk.com^
+@@||sf1-ttcdn-tos.pstatp.com^
+
+! ============================================================
+! 安全 / 登录 / 更新 (Security & Authentication)
+! ============================================================
+! 用途：放行账号登录、安全验证、OTA 升级
+
+! 360
+@@||sdup.update.360safe.com^
+
+! 迅雷登录
+@@||mobile-login.xunlei.com^
+@@||mobile-login-2.xunlei.com^
+@@||mobile-login-3.xunlei.com^
+
+! 阿里云
+@@||oa-panther.data.aliyun.com^
+@@||promotion.aliyun.com^
+
+! 开发平台
+@@||dev.tencent.com^
+@@||github.com^
+@@||githubusercontent.com^
+@@||npmjs.com^
+@@||registry.npmjs.org^
+
+! ============================================================
+! 音视频娱乐（正片，非广告）
+! ============================================================
+! 用途：放行 Prime Video、PSN 等国际娱乐平台
+
+@@||id.sonyentertainmentnetwork.com^
+@@||www.primevideo.com^
+@@||netflix.com^
+@@||nflxvideo.net^
+
+! ============================================================
+! 测速 / 工具
+! ============================================================
+
+@@||forge.speedtest.cn^
+@@||www.macx.cn^
+
+! ============================================================
+! 自定义信任放行
+! ============================================================
+! 在此处添加你自己的白名单规则，格式：@@||domain^ 或 @@||domain/path^
+!
+! @@||your-custom-whitelist.example^

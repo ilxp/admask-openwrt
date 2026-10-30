@@ -1,0 +1,14 @@
+#!/bin/sh
+
+[ -f "/etc/config/ucitrack" ] && {
+	uci -q batch <<-EOF >/dev/null
+		delete ucitrack.@admask[-1]
+		add ucitrack admask
+		set ucitrack.@admask[-1].init=admask
+		commit ucitrack
+	EOF
+}
+
+rm -rf /tmp/luci-*
+
+exit 0

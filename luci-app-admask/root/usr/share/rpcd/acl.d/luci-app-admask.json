@@ -1,0 +1,43 @@
+{
+	"luci-app-admask": {
+		"description": "Grant access to AdMask",
+		"read": {
+			"ubus": {
+				"service": ["list"],
+				"file": ["read", "stat", "md5", "list", "exec"],
+				"rc": ["list", "init"],
+				"admask": ["read"]
+			},
+			"uci": ["admask"],
+			"file": {
+				"/bin/sh": ["exec"],
+				"/sbin/logread": ["exec"],
+				"/etc/admask/**": ["read", "list"],
+				"/etc/config/admask": ["read"],
+				"/tmp/admask.status": ["read"],
+				"/tmp/admask-*.status": ["read"],
+				"/tmp/dhcp.leases": ["read"],
+				"/proc/net/arp": ["read"],
+				"/var/log/admask-*.log": ["read"]
+			}
+		},
+		"write": {
+			"ubus": {
+				"service": ["list"],
+				"rc": ["init"],
+				"file": ["write", "remove", "exec"],
+				"admask": ["write"]
+			},
+			"uci": ["admask"],
+			"file": {
+				"/bin/sh": ["exec"],
+				"/sbin/logread": ["exec"],
+				"/etc/admask/rules.d/**": ["write"],
+				"/etc/admask/certs/**": ["write"],
+				"/etc/admask/*.yaml": ["write"],
+				"/etc/config/admask": ["write"],
+				"/tmp/admask-*": ["write"]
+			}
+		}
+	}
+}

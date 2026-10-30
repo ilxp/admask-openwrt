@@ -1,0 +1,95 @@
+config admask 'main'
+	option enabled '0'
+	option transparent '1'
+	option addr '0.0.0.0:18080'
+	option ca_dir '/etc/admask/certs'
+	option rules_dir '/etc/admask/cache'
+	option rules_config '/etc/admask/rules-sources.yaml'
+	option local_rules_dir '/etc/admask/rules.d'
+	option hls_sites '/etc/admask/hls-sites-rules.yaml'
+	option video_service_rules '/etc/admask/video-service-rules.yaml'
+	option video_service_rules_refresh '60s'
+	option update_interval '24h'
+	option no_subs '0'
+	option cert_cache '256'
+	option verbose '0'
+	option picker '0'
+	option video_cdn_passthrough '1'
+	option upstream_proxy ''
+	option max_generic_css_kb '1500'
+
+	# WebSocket 隧道 idle 回收超时（Go duration 格式）
+	#   30m  → 30 分钟（推荐默认）
+	#   0    → 禁用（长连接场景）
+	#   空值 → 默认 30 分钟
+	option ws_idle_timeout ''
+
+	# ===== 副引擎（adblock-rust）=====
+	# 三态配置：
+	#   'auto'（默认）—— 自动查找副引擎二进制：
+	#       ./adblock-engine
+	#       ./adblock-engine.exe
+	#       /usr/lib/adblock-engine
+	#       /usr/local/bin/adblock-engine
+	#     找到 → 启用 adblock-rust（性能增强 + uBO 语法完整）
+	#     找不到 → 自动降级到内嵌 urlfilter
+	#
+	#   'none'         —— 强制使用内嵌 urlfilter，即使副引擎存在也不启用
+	#   其他路径       —— 显式指定副引擎二进制路径，不做自动查找
+	#
+	# 启用副引擎（推荐，默认已开启）：
+	#   uci set admask.@admask[0].adblock_engine='auto'
+	#   uci commit admask
+	#   /etc/init.d/admask restart
+	#
+	# 强制回退到内嵌 urlfilter：
+	#   uci set admask.@admask[0].adblock_engine='none'
+	#   uci commit admask
+	#   /etc/init.d/admask restart
+	#
+	# 显式指定副引擎路径（如自定义位置）：
+	#   uci set admask.@admask[0].adblock_engine='/opt/my-engine'
+	#   uci commit admask
+	#   /etc/init.d/admask restart
+	#
+	# ⚠️ 副引擎启动失败时——AdMask 自动降级到内嵌 urlfilter——服务不中断
+	# ⚠️ 仅 x86_64 / aarch64 / armv7 支持副引擎
+	#    MIPS（mips / mipsel）平台不可用——Rust 官方已废弃这些 target
+	#    这类平台继续用内嵌 urlfilter——功能完整，只是没有性能增强
+	option adblock_engine 'auto'
+
+	# IPC socket 路径（Unix Domain Socket）
+	# 空值 = 用 AdMask 的内置默认值 $TMPDIR/adblock-engine.sock
+	# 一般无需修改——除非 /tmp 空间紧张想放别处
+	option adblock_engine_socket ''
+	
+	
+
+	# ===== 调试 dump =====
+	# 两个独立开关——分别控制 m3u8 和 mixer JSON 的存盘。
+	# 目录共用 dump_dir。
+	option dump_m3u8 '0'
+	option dump_mixer '0'
+	option dump_dir '/tmp/admask-dump'
+	option dump_max_files '10000'
+
+config firewall 'firewall'
+	option enabled '1'
+	option redirect_ports '80 443'
+	option block_quic '1'
+
+# 代理列表——空表示不代理任何设备
+# 用户通过"访问控制"页添加
+# config exclude
+#	option enabled '1'
+#	option type 'ip'
+#	option value '192.168.8.100'
+#	option comment '我的电脑'
+
+# 订阅源
+config source 'AdGuard_Base'
+	option name 'AdGuard_Base'
+	option type 'remote'
+	option url 'https://filters.adtidy.org/extension/ublock/filters/2.txt'
+	option refresh '24h'
+	option enabled '1'

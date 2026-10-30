@@ -1,0 +1,719 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+USE_PROCD=1
+
+# 全局：实例端口列表（空格分隔）——由 init_instance_ports 填充
+INSTANCE_PORTS=""
+
+# ============================================================
+# 工具函数
+# ============================================================
+log_admask() {
+	local log_file="/var/log/admask.log"
+	# 如果文件超过 1MB，直接清空（OpenWrt 的 /tmp 是内存盘）
+	if [ -f "$log_file" ] && [ $(wc -c < "$log_file") -gt 1048576 ]; then
+		rm -f "$log_file"
+	fi
+	echo "$(date '+%Y-%m-%d %H:%M:%S') [init.d] $*" >> "$log_file"
+}
+
+yaml_escape() {
+	local s="$1"
+	s=$(printf '%s' "$s" | sed "s/'/''/g")
+	printf "'%s'" "$s"
+}
+
+set_uci_enabled() {
+	uci set admask.main.enabled="$1"
+	uci commit admask
+}
+
+parse_port_from_addr() {
+	local addr="$1"
+	local port
+
+	# 识别 IPv6 无端口形式
+	case "$addr" in
+		*"]:"*) port="${addr##*]:}" ;;
+		*::*)   port="18080" ;;
+		*:*:*)  port="18080" ;;
+		*:*)    port="${addr##*:}" ;;
+		*)      port="$addr" ;;
+	esac
+
+	case "$port" in
+		''|*[!0-9]*) port="18080" ;;
+	esac
+	{ [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; } && port="18080"
+	echo "$port"
+}
+
+get_mac_by_ip() {
+	local ip="$1"
+	local mac
+	mac=$(ip neigh show "$ip" 2>/dev/null | awk '{print $5}' | head -1)
+	if [ -n "$mac" ] && [ "$mac" != "00:00:00:00:00:00" ] && [ "$mac" != "FAILED" ]; then
+		echo "$mac"; return 0
+	fi
+	if [ -f /tmp/dhcp.leases ]; then
+		mac=$(awk -v ip="$ip" '$3 == ip {print $2; exit}' /tmp/dhcp.leases 2>/dev/null)
+		if [ -n "$mac" ] && [ "$mac" != "00:00:00:00:00:00" ]; then echo "$mac"; return 0; fi
+	fi
+	if [ -f /proc/net/arp ]; then
+		mac=$(awk -v ip="$ip" '$1 == ip {print $4; exit}' /proc/net/arp 2>/dev/null)
+		if [ -n "$mac" ] && [ "$mac" != "00:00:00:00:00:00" ]; then echo "$mac"; return 0; fi
+	fi
+	echo ""; return 1
+}
+
+get_ip_by_mac() {
+	local mac="$1"
+	local ip
+	if [ -f /tmp/dhcp.leases ]; then
+		ip=$(awk -v m="$mac" 'tolower($2) == tolower(m) {print $3; exit}' /tmp/dhcp.leases 2>/dev/null)
+		if [ -n "$ip" ]; then echo "$ip"; return 0; fi
+	fi
+	ip=$(ip neigh show 2>/dev/null | grep -i "$mac" | awk '{print $1}' | head -1)
+	if [ -n "$ip" ]; then echo "$ip"; return 0; fi
+	if [ -f /proc/net/arp ]; then
+		ip=$(awk -v m="$mac" 'tolower($4) == tolower(m) {print $1; exit}' /proc/net/arp 2>/dev/null)
+		if [ -n "$ip" ]; then echo "$ip"; return 0; fi
+	fi
+	echo ""; return 1
+}
+
+# 源类型自动识别：mac / ipv4 / ipv6 / unknown
+detect_source_type() {
+	local src="$1"
+
+	# MAC
+	if echo "$src" | grep -qE '^([0-9a-f]{2}[:-]){5}[0-9a-f]{2}$'; then
+		echo "mac"; return
+	fi
+
+	# IPv4 / IPv4 CIDR——严格校验段值 ≤ 255、前缀 ≤ 32
+	if echo "$src" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}(/[0-9]{1,2})?$'; then
+		local ip4="${src%/*}" pfx4=""
+		case "$src" in */*) pfx4="${src#*/}" ;; esac
+		local o1 o2 o3 o4 ok=1
+		o1=$(echo "$ip4" | cut -d. -f1)
+		o2=$(echo "$ip4" | cut -d. -f2)
+		o3=$(echo "$ip4" | cut -d. -f3)
+		o4=$(echo "$ip4" | cut -d. -f4)
+		for o in "$o1" "$o2" "$o3" "$o4"; do
+			[ "$o" -le 255 ] 2>/dev/null || ok=0
+		done
+		if [ "$ok" = "1" ]; then
+			if [ -n "$pfx4" ]; then
+				[ "$pfx4" -le 32 ] 2>/dev/null || { echo "unknown"; return; }
+			fi
+			echo "ipv4"; return
+		fi
+	fi
+
+	# IPv6 / IPv6 CIDR——基本格式
+	if echo "$src" | grep -q ':' && echo "$src" | grep -qE '^[0-9a-fA-F:]+(/[0-9]{1,3})?$'; then
+		local pfx6=""
+		case "$src" in */*) pfx6="${src#*/}" ;; esac
+		if [ -n "$pfx6" ]; then
+			[ "$pfx6" -le 128 ] 2>/dev/null || { echo "unknown"; return; }
+		fi
+		echo "ipv6"; return
+	fi
+
+	echo "unknown"
+}
+
+# ============================================================
+# 实例端口收集
+# ============================================================
+
+collect_instance_port() {
+	local section="$1"
+	local enabled port
+	config_get_bool enabled "$section" enabled '1'
+	[ "$enabled" = "1" ] || return 0
+	config_get port "$section" port ''
+	case "$port" in
+		''|*[!0-9]*) return 0 ;;
+	esac
+	[ "$port" -ge 1 ] && [ "$port" -le 65535 ] || return 0
+	INSTANCE_PORTS="$INSTANCE_PORTS $port"
+}
+
+init_instance_ports() {
+	INSTANCE_PORTS=""
+	local main_addr main_port
+	config_get main_addr main addr '0.0.0.0:18080'
+	main_port=$(parse_port_from_addr "$main_addr")
+	INSTANCE_PORTS="$main_port"
+	config_foreach collect_instance_port instance
+	INSTANCE_PORTS=$(echo $INSTANCE_PORTS)
+}
+
+count_ports() {
+	local n=0
+	for _p in $INSTANCE_PORTS; do n=$((n + 1)); done
+	echo "$n"
+}
+
+# ============================================================
+# UCI → rules-sources.yaml（原有）
+# ============================================================
+
+generate_rules_sources() {
+	local output="$1"
+	echo "sources:" > "$output"
+	config_load admask
+	config_foreach generate_source source "$output"
+	local css_kb
+	config_get css_kb main max_generic_css_kb '1500'
+	echo "" >> "$output"
+	echo "options:" >> "$output"
+	echo "  max_generic_css_kb: $css_kb" >> "$output"
+}
+
+generate_source() {
+	local section="$1"
+	local output="$2"
+	local name type url path refresh enabled
+	config_get name "$section" name
+	config_get type "$section" type
+	config_get url "$section" url
+	config_get path "$section" path
+	config_get refresh "$section" refresh
+	config_get_bool enabled "$section" enabled '1'
+
+	echo "  - name: $(yaml_escape "$name")" >> "$output"
+	echo "    type: $(yaml_escape "$type")" >> "$output"
+	[ -n "$url" ] && echo "    url: $(yaml_escape "$url")" >> "$output"
+	[ -n "$path" ] && echo "    path: $(yaml_escape "$path")" >> "$output"
+	# ★ 兜底：非法 duration 降级为 24h——防止手改 UCI 导致启动失败
+	if ! echo "$refresh" | grep -qE '^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))+$'; then
+		if [ -n "$refresh" ]; then
+			log_admask "WARN: invalid refresh '$refresh' for source '$name' — using 24h"
+		fi
+		refresh="24h"
+	fi
+	echo "    refresh: $(yaml_escape "$refresh")" >> "$output"
+	
+	if [ "$enabled" = "1" ]; then
+		echo "    enabled: true" >> "$output"
+	else
+		echo "    enabled: false" >> "$output"
+	fi
+}
+
+# ============================================================
+# 防火墙（多实例 + 源类型）
+# ============================================================
+
+apply_firewall() {
+	config_load admask
+	local fw_enabled
+	config_get_bool fw_enabled firewall enabled '1'
+	[ "$fw_enabled" = "1" ] || return 0
+
+	ip rule add fwmark 1 lookup 100 2>/dev/null || true
+	ip route add local 0.0.0.0/0 dev lo table 100 2>/dev/null || true
+	ip -6 rule add fwmark 1 lookup 100 2>/dev/null || true
+	ip -6 route add local ::/0 dev lo table 100 2>/dev/null || true
+
+	nft delete table inet admask 2>/dev/null || true
+
+	generate_nftables | nft -f - || {
+		log_admask "nft -f failed"
+		return 1
+	}
+}
+
+generate_nftables() {
+	config_load admask
+	init_instance_ports
+
+	local n_ports
+	n_ports=$(count_ports)
+
+	local block_quic
+	config_get_bool block_quic firewall block_quic '1'
+
+	# 端口集合表达式
+	local port_set
+	if [ "$n_ports" = "1" ]; then
+		port_set="$INSTANCE_PORTS"
+	else
+		port_set="{ $(echo $INSTANCE_PORTS | sed 's/ /, /g') }"
+	fi
+
+	local local_ip4_list local_ip6_list
+	local_ip4_list=$(ip -4 -o addr show 2>/dev/null | awk '$3 == "inet" {print $4}' | cut -d/ -f1)
+	local_ip6_list=$(ip -6 -o addr show 2>/dev/null | awk '$3 == "inet6" {print $4}' | cut -d/ -f1 | grep -v '^fe80:')
+
+	log_admask "nft: $n_ports instance(s): $INSTANCE_PORTS"
+	log_admask "nft: exempt local IPv4 ($(echo $local_ip4_list | wc -w)) / IPv6 ($(echo $local_ip6_list | wc -w))"
+
+	cat <<EOF
+table inet admask {
+	chain prerouting {
+		type filter hook prerouting priority mangle; policy accept;
+		
+		# ★放行所有内网 IPv4 和 IPv6 流量，彻底杜绝“自己代理自己”
+		ip daddr { 127.0.0.0/8, 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12 } return
+		ip6 daddr { ::1, fc00::/7, fe80::/10 } return
+EOF
+
+	if [ -n "$local_ip4_list" ]; then
+		for ip4 in $local_ip4_list; do
+			[ -n "$ip4" ] && echo "		ip daddr $ip4 return"
+		done
+	else
+		echo "		ip daddr 192.168.0.0/16 return"
+		echo "		ip daddr 10.0.0.0/8 return"
+		echo "		ip daddr 172.16.0.0/12 return"
+	fi
+	if [ -n "$local_ip6_list" ]; then
+		for ip6 in $local_ip6_list; do
+			[ -n "$ip6" ] && echo "		ip6 daddr $ip6 return"
+		done
+	fi
+
+	echo "		tcp dport $port_set return"
+	echo "		socket transparent 1 meta mark set 0x1 accept"
+
+	config_foreach emit_proxy_source exclude
+
+	cat <<EOF
+	}
+	chain output {
+		type route hook output priority mangle; policy accept;
+		meta skuid 0 return
+	}
+EOF
+
+	if [ "$block_quic" = "1" ]; then
+		cat <<EOF
+	chain forward {
+		type filter hook forward priority 0; policy accept;
+		udp dport 443 reject
+		ip6 nexthdr udp udp dport 443 reject
+	}
+EOF
+	fi
+
+	echo "}"
+}
+
+emit_proxy_source() {
+	local section="$1"
+	local enabled source family mode comment
+	config_get_bool enabled "$section" enabled '1'
+	[ "$enabled" = "1" ] || return 0
+
+	config_get source "$section" source ''
+	[ -z "$source" ] && config_get source "$section" value ''
+	[ -n "$source" ] || return 0
+
+	config_get family "$section" family 'both'
+	config_get mode "$section" mode 'https'
+	config_get comment "$section" comment ''
+
+	source=$(echo "$source" | tr 'A-Z' 'a-z')
+	[ "$mode" = "off" ] && return 0
+
+	local dport_expr
+	case "$mode" in
+		http)  dport_expr="tcp dport { 80 }" ;;
+		https) dport_expr="tcp dport { 80, 443 }" ;;
+		all)   dport_expr="meta l4proto tcp" ;;
+		*)     dport_expr="tcp dport { 80, 443 }" ;;
+	esac
+
+	# 注释：IPv4 源附 IP 反查 + 用户备注
+	comment=$(echo "$comment" | tr -d '\n\r\\' | sed 's/"/ /g')
+	local comment_str
+	local cur_ip=""
+	case "$(detect_source_type "$source")" in
+		mac) cur_ip=$(get_ip_by_mac "$source") ;;
+	esac
+	if [ -n "$cur_ip" ] && [ -n "$comment" ]; then
+		comment_str="comment \"$cur_ip $comment\""
+	elif [ -n "$cur_ip" ]; then
+		comment_str="comment \"$cur_ip\""
+	elif [ -n "$comment" ]; then
+		comment_str="comment \"$comment\""
+	else
+		comment_str="comment \"$source\""
+	fi
+
+	local src_type
+	src_type=$(detect_source_type "$source")
+
+	local n_ports
+	n_ports=$(count_ports)
+
+	case "$src_type" in
+	mac)
+		if [ "$family" = "both" ] || [ "$family" = "ipv4" ]; then
+			emit_rules "ether saddr $source" "meta nfproto ipv4" "ip" "$dport_expr" "$n_ports" "$comment_str"
+		fi
+		if [ "$family" = "both" ] || [ "$family" = "ipv6" ]; then
+			emit_rules "ether saddr $source" "meta nfproto ipv6" "ip6" "$dport_expr" "$n_ports" "$comment_str"
+		fi
+		;;
+	ipv4)
+		# ip saddr 已经包含了协议族，不需要前缀
+		emit_rules "ip saddr $source" "" "ip" "$dport_expr" "$n_ports" "$comment_str"
+		;;
+	ipv6)
+		# ip6 saddr 已经包含了协议族，不需要前缀
+		emit_rules "ip6 saddr $source" "" "ip6" "$dport_expr" "$n_ports" "$comment_str"
+		;;
+	*)
+		log_admask "nft: unknown source type: $source"
+		;;
+	esac
+}
+
+# emit_rules <match> <family_prefix> <tproxy_family> <dport> <n> <comment>
+#
+#   match          —— "ether saddr aa:bb:..." / "ip saddr 1.2.3.4" / "ip6 saddr ::1"
+#   family_prefix  —— "ip" 或 "ip6"（用于 ct state new 规则的协议前缀）
+#   tproxy_family  —— "ip" 或 "ip6"（tproxy 目标家族）
+#   dport          —— "tcp dport { 80, 443 }"
+#   n              —— 实例数
+#   comment        —— 完整 comment 字符串（含 comment ""）
+emit_rules() {
+	local match="$1"
+	local fam_prefix="$2"
+	local tp_fam="$3"
+	local dport="$4"
+	local n="$5"
+	local comment="$6"
+
+	if [ "$n" = "1" ]; then
+		# 单实例——直接 tproxy
+		echo "		$match $dport tproxy $tp_fam to :$INSTANCE_PORTS meta mark set 0x1 accept $comment"
+		return
+	fi
+
+	# 多实例——ct mark 随机分发
+	if [ -n "$fam_prefix" ]; then
+		# 对于 MAC 源，需要带上 "meta nfproto ipv4/ipv6" 前缀
+		echo "		$match $fam_prefix $dport ct state new ct mark set numgen random mod $n"
+		local idx=0
+		for port in $INSTANCE_PORTS; do
+			echo "		$match $fam_prefix ct mark $idx $dport tproxy $tp_fam to :$port meta mark set 0x1 accept $comment"
+			idx=$((idx + 1))
+		done
+	else
+		# 对于 IP/CIDR 源，match 里已经包含协议，直接写
+		echo "		$match $dport ct state new ct mark set numgen random mod $n"
+		local idx=0
+		for port in $INSTANCE_PORTS; do
+			echo "		$match ct mark $idx $dport tproxy $tp_fam to :$port meta mark set 0x1 accept $comment"
+			idx=$((idx + 1))
+		done
+	fi
+}
+
+remove_firewall() {
+	nft delete table inet admask 2>/dev/null || true
+	ip rule del fwmark 1 lookup 100 2>/dev/null || true
+	ip route del local 0.0.0.0/0 dev lo table 100 2>/dev/null || true
+	ip -6 rule del fwmark 1 lookup 100 2>/dev/null || true
+	ip -6 route del local ::/0 dev lo table 100 2>/dev/null || true
+}
+
+# ============================================================
+# DNS 内部域名（原有）
+# ============================================================
+
+setup_internal_dns() {
+	local virtual_ip="198.18.0.1"
+	local exists=0 i=0 changed=0
+	while true; do
+		local name
+		name=$(uci -q get dhcp.@domain[$i].name)
+		[ -z "$name" ] && break
+		if [ "$name" = "admask.internal" ]; then
+			local cur_ip
+			cur_ip=$(uci -q get dhcp.@domain[$i].ip)
+			if [ "$cur_ip" != "$virtual_ip" ]; then
+				uci set dhcp.@domain[$i].ip="$virtual_ip"; changed=1
+			fi
+			exists=1; break
+		fi
+		i=$((i + 1))
+	done
+	if [ "$exists" = "0" ]; then
+		uci add dhcp domain > /dev/null
+		uci set dhcp.@domain[-1].name="admask.internal"
+		uci set dhcp.@domain[-1].ip="$virtual_ip"
+		changed=1
+	fi
+	if [ "$changed" = "1" ]; then
+		uci commit dhcp
+		log_admask "dnsmasq: admask.internal -> $virtual_ip"
+		/etc/init.d/dnsmasq reload 2>/dev/null || true
+	else
+		log_admask "dnsmasq: admask.internal already configured"
+	fi
+}
+
+cleanup_internal_dns() {
+	local i=0
+	while true; do
+		local name
+		name=$(uci -q get dhcp.@domain[$i].name)
+		[ -z "$name" ] && break
+		if [ "$name" = "admask.internal" ]; then
+			uci -q delete dhcp.@domain[$i]
+			uci commit dhcp
+			log_admask "dnsmasq: admask.internal removed"
+			/etc/init.d/dnsmasq reload 2>/dev/null || true
+			return 0
+		fi
+		i=$((i + 1))
+	done
+}
+
+# ============================================================
+# 启动单实例
+# ============================================================
+
+start_one_instance() {
+	local idx="$1"
+	local port="$2"
+	local total="$3"
+	local extra="$4"
+	local shared="$5"
+
+	# ★ 统一：日志与 PID 自动带端口
+	local log_file="/var/log/admask-$port.log"
+	local pidfile="/var/run/admask-$port.pid"
+
+	# 清理状态文件
+	rm -f "/tmp/admask-$port.status"
+
+	local inst_args="$shared -addr 0.0.0.0:$port"
+	
+	[ -n "$extra" ] && inst_args="$inst_args $extra"
+
+	# 日志轮转（超 5MB 清空）
+	if [ -f "$log_file" ]; then
+		local size
+		size=$(wc -c < "$log_file")
+		if [ "$size" -gt 5242880 ]; then
+			rm -f "$log_file"
+		fi
+	fi
+
+	procd_open_instance "admask-$port"
+	procd_set_param command /bin/sh -c \
+		"ADMASK_RESOURCES_DIR=/usr/lib/resources /usr/bin/admask $inst_args > $log_file 2>&1"
+	procd_set_param limits nofile="65536 65536"
+	procd_set_param respawn 3600 5 5
+	procd_set_param stdout 0
+	procd_set_param stderr 0
+	procd_set_param pidfile "$pidfile"
+	procd_close_instance
+
+	log_admask "instance #$idx started on :$port (log=$log_file)"
+}
+
+# ============================================================
+# 启动服务
+# ============================================================
+
+start_service() {
+    config_load admask
+
+    # ★ 第一步：CA 公钥提前拷贝 —— 不依赖 enabled
+    #   - 客户端安装证书只需要公钥 —— 任何时间都应可下载
+    #   - 服务停止 / enabled=0 时也要保留（公钥无安全风险）
+    local ca_dir_early
+    config_get ca_dir_early main ca_dir '/etc/admask/certs'
+
+    if [ -f "$ca_dir_early/ca.crt" ]; then
+        # ★ 修复2：CA 变化 或 /www/ca.crt 缺失 —— 都要删旧公钥包
+        #   - CA 变化 → 旧公钥包是旧 CA → 客户端下载后 MITM 失败
+        #   - /www/ca.crt 缺失（手动删除 / 分区故障）→ 同样清理
+        if [ ! -f /www/ca.crt ] || ! cmp -s /www/ca.crt "$ca_dir_early/ca.crt"; then
+            rm -f /www/admask-ca-backup.tar.gz
+            log_admask "CA changed or /www/ca.crt missing — invalidated old public bundle"
+        fi
+		if cp -f "$ca_dir_early/ca.crt" /www/ca.crt; then
+			chmod 644 /www/ca.crt
+			log_admask "CA public key ready: /www/ca.crt"
+		else
+			log_admask "WARN: copy CA to /www failed — client download unavailable!"
+			logger -t admask -p user.err "CA copy to /www failed" 2>/dev/null || true
+		fi
+    else
+        log_admask "CA public key missing: $ca_dir_early/ca.crt — waiting for CA generation"
+        # CA 未生成（首次启动 / Regenerate 后）——后台等——最多 10 秒
+		(
+			for i in 1 2 3 4 5 6 7 8 9 10; do
+				if [ -f "$ca_dir_early/ca.crt" ]; then
+					if cp -f "$ca_dir_early/ca.crt" /www/ca.crt; then
+						chmod 644 /www/ca.crt
+						log_admask "CA public key ready (delayed): /www/ca.crt"
+					else
+						log_admask "WARN: delayed copy CA to /www failed!"
+						logger -t admask -p user.err "CA copy to /www failed (delayed)" 2>/dev/null || true
+					fi
+					break
+				fi
+				sleep 1
+			done
+		) &
+    fi
+
+    # ★ 第二步：enabled 检查 —— 只有启用时才启动服务
+    local enabled
+    config_get_bool enabled main enabled '0'
+    if [ "$enabled" != "1" ]; then
+        log_admask "admask disabled by UCI (enabled=0) — CA download still available"
+        return 0
+    fi
+    /etc/init.d/admask enable
+
+    # ── rules-sources.yaml ──
+    local local_rules_dir rules_config rules_dir ca_dir
+    config_get local_rules_dir main local_rules_dir '/etc/admask/rules.d'
+	config_get rules_config main rules_config '/etc/admask/rules-sources.yaml'
+	mkdir -p "$(dirname "$rules_config")"
+	local has_sources=0
+	if [ -n "$(uci -q show admask | grep '=source')" ]; then has_sources=1; fi
+	if [ "$has_sources" = "1" ] || [ ! -f "$rules_config" ]; then
+		generate_rules_sources "$rules_config"
+	fi
+
+	config_get rules_dir main rules_dir '/etc/admask/cache'
+	config_get ca_dir main ca_dir '/etc/admask/certs'
+	mkdir -p "$rules_dir" "$local_rules_dir" "$ca_dir"
+
+	# ── 清理旧状态 ──
+	rm -f /tmp/admask.status /tmp/admask-*.status
+	rm -f /var/run/admask.pid /var/run/admask-*.pid
+
+	[ -f "$local_rules_dir/10-whitelist.txt" ] || touch "$local_rules_dir/10-whitelist.txt"
+	[ -f "$local_rules_dir/20-blacklist.txt" ] || touch "$local_rules_dir/20-blacklist.txt"
+	[ -f "$local_rules_dir/99-custom.txt" ] || touch "$local_rules_dir/99-custom.txt"
+
+	# ── 防火墙 + DNS ──
+	if ! apply_firewall; then
+		log_admask "ERROR: firewall apply failed — service will start WITHOUT protection!"
+		# logger 让 logread / LuCI 系统日志能立即看到——不止写入 admask.log
+		logger -t admask -p user.err "firewall apply failed — running without traffic interception!" 2>/dev/null || true
+	fi
+	setup_internal_dns
+
+	# ── 收集实例端口 ──
+	init_instance_ports
+	local total_instances
+	total_instances=$(count_ports)
+	log_admask "starting $total_instances instance(s): $INSTANCE_PORTS"
+
+	# ── 构建共享参数（不含 -addr / -status-file）──
+	local transparent no_subs update_interval cert_cache verbose picker
+	config_get_bool transparent main transparent '1'
+	config_get_bool no_subs main no_subs '0'
+	config_get update_interval main update_interval '24h'
+	config_get cert_cache main cert_cache '512'
+	config_get_bool verbose main verbose '0'
+	config_get_bool picker main picker '0'
+
+	local shared_args="-ca-dir $ca_dir"
+	shared_args="$shared_args -rules-dir $rules_dir"
+	shared_args="$shared_args -rules-config $rules_config"
+	[ -n "$local_rules_dir" ] && shared_args="$shared_args -local-rules-dir $local_rules_dir"
+	shared_args="$shared_args -update-interval $update_interval"
+	shared_args="$shared_args -cert-cache $cert_cache"
+	[ "$transparent" = "1" ] && shared_args="$shared_args -transparent"
+	[ "$verbose" = "1" ] && shared_args="$shared_args -v"
+	[ "$picker" = "1" ] && shared_args="$shared_args -picker"
+
+	local video_cdn_pt video_cdn_cfg ws_idle_timeout
+	config_get_bool video_cdn_pt main video_cdn_passthrough '1'
+	[ "$video_cdn_pt" = "0" ] && shared_args="$shared_args -video-cdn-passthrough=false"
+	config_get video_cdn_cfg main video_cdn_config '/etc/admask/video-cdn-passthrough.yaml'
+	[ -n "$video_cdn_cfg" ] && shared_args="$shared_args -video-cdn-passthrough-config $video_cdn_cfg"
+	config_get ws_idle_timeout main ws_idle_timeout ''
+	[ -n "$ws_idle_timeout" ] && shared_args="$shared_args -ws-idle-timeout $ws_idle_timeout"
+
+	local dump_m3u8 dump_mixer dump_dir dump_max_files
+	config_get_bool dump_m3u8  main dump_m3u8  '0'
+	config_get_bool dump_mixer main dump_mixer '0'
+	config_get      dump_dir   main dump_dir   '/tmp/admask-dump'
+	config_get      dump_max_files main dump_max_files '10000'
+	if [ "$dump_m3u8" = "1" ] || [ "$dump_mixer" = "1" ]; then
+		shared_args="$shared_args -dump-dir $dump_dir -dump-max-files $dump_max_files"
+	fi
+	[ "$dump_m3u8"  = "1" ] && shared_args="$shared_args -dump-m3u8"
+	[ "$dump_mixer" = "1" ] && shared_args="$shared_args -dump-mixer"
+
+	local hls_sites video_rules video_refresh
+	config_get hls_sites main hls_sites '/etc/admask/hls-sites-rules.yaml'
+	[ -n "$hls_sites" ] && shared_args="$shared_args -hls-sites $hls_sites"
+	config_get video_rules main video_service_rules '/etc/admask/video-service-rules.yaml'
+	config_get video_refresh main video_service_rules_refresh '60s'
+	shared_args="$shared_args -video-service-rules $video_rules -video-service-rules-refresh $video_refresh"
+
+	local ab_engine ab_socket
+	config_get ab_engine main adblock_engine 'auto'
+	config_get ab_socket main adblock_engine_socket ''
+	[ -z "$ab_engine" ] && ab_engine="auto"
+	shared_args="$shared_args -adblock-engine $ab_engine"
+	[ -n "$ab_socket" ] && shared_args="$shared_args -adblock-engine-socket $ab_socket"
+	
+	local upstream_proxy
+	config_get upstream_proxy main upstream_proxy ''
+	# 纵深防御：拒绝含 shell 元字符的值（手改 UCI 绕过 validate 的场景）
+	case "$upstream_proxy" in
+		*[\"\'\`\$\&\|\;\<\>\(\)\{\}\[\]\*\?\\]*)
+			log_admask "WARN: upstream_proxy contains suspicious chars — ignored"
+			upstream_proxy=""
+			;;
+	esac
+	[ -n "$upstream_proxy" ] && shared_args="$shared_args -upstream-proxy \"$upstream_proxy\""
+
+	export GOMEMLIMIT=64MiB
+	export GOGC=60
+
+	# ── 启动所有实例 ──
+	local idx=0
+	for port in $INSTANCE_PORTS; do
+		idx=$((idx + 1))
+		local extra=""
+		# 首实例正常下载订阅；后续实例 -no-subs
+		if [ "$idx" -gt 1 ]; then
+			extra="-no-subs"
+		fi
+		[ "$no_subs" = "1" ] && extra="-no-subs"
+		start_one_instance "$idx" "$port" "$total_instances" "$extra" "$shared_args"
+	done
+}
+
+stop_service() {
+    remove_firewall
+    cleanup_internal_dns
+    # ★ 不删 /www/ca.crt 和 /www/admask-ca-backup.tar.gz —— 公钥，客户端下载需要
+    #   私钥的临时下载在 certificate.js::handleMigrationBackup 里 —— 不依赖这里清理
+    rm -f /tmp/adblock-engine.sock /tmp/adblock-engine-*.sock
+    rm -f /tmp/admask.status /tmp/admask-*.status
+    rm -f /var/run/admask.pid /var/run/admask-*.pid
+    rm -f /tmp/admask-ca-migration.tar.gz   # 兜底（正常命令内已删）
+}
+
+reload_service() {
+	log_admask "reload_service: performing stop + start"
+	stop
+	start
+}
+
+service_triggers() {
+	procd_add_reload_trigger "admask"
+}

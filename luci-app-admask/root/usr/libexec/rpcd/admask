@@ -1,0 +1,60 @@
+#!/bin/sh
+. /usr/share/libubox/jshn.sh
+
+case "$1" in
+list)
+	cat <<'JSON'
+{
+	"read":  { "target": "string" },
+	"write": { "target": "string", "content": "string" }
+}
+JSON
+	;;
+call)
+	method="$2"
+	# ★ 修复：必须把读取输入放到 call 分支里面！
+	INPUT=$(cat)
+	json_load "$INPUT"
+	json_get_var target target
+	json_get_var content content
+
+	case "$target" in
+		custom)    FILE="/etc/admask/rules.d/99-custom.txt" ;;
+		hls)       FILE="/etc/admask/hls-sites-rules.yaml" ;;
+		video)     FILE="/etc/admask/video-service-rules.yaml" ;;
+		cdn)       FILE="/etc/admask/video-cdn-passthrough.yaml" ;;
+		whitelist) FILE="/etc/admask/rules.d/10-whitelist.txt" ;;
+		blacklist) FILE="/etc/admask/rules.d/20-blacklist.txt" ;;
+		*)         FILE="" ;;
+	esac
+
+	case "$method" in
+	read)
+		if [ -z "$FILE" ] || [ ! -f "$FILE" ]; then
+			json_init
+			json_add_string content ""
+			json_dump
+			exit 0
+		fi
+		CONTENT=$(cat "$FILE" 2>/dev/null)
+		json_init
+		json_add_string "content" "$CONTENT"
+		json_dump
+		;;
+	write)
+		if [ -z "$FILE" ]; then
+			json_init
+			json_add_boolean ok 0
+			json_dump
+			exit 0
+		fi
+		mkdir -p "$(dirname "$FILE")"
+		printf '%s' "$content" > "$FILE"
+		( sleep 0.5; /etc/init.d/admask restart >/dev/null 2>&1 ) &
+		json_init
+		json_add_boolean ok 1
+		json_dump
+		;;
+	esac
+	;;
+esac

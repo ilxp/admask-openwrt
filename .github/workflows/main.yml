@@ -1,0 +1,147 @@
+name: Build AdMask
+
+on:
+  #push:
+    #tags:
+      #- "*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g., v1.0.0). Leave empty to skip release creation and only upload artifacts."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}-${{ matrix.tag }}
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.tag.outputs.tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - aarch64_cortex-a53
+          - aarch64_cortex-a72
+          - aarch64_cortex-a76
+          - aarch64_generic
+          - arm_arm1176jzf-s_vfp
+          - arm_arm926ej-s
+          - arm_cortex-a15_neon-vfpv4
+          - arm_cortex-a5_vfpv4
+          - arm_cortex-a7
+          - arm_cortex-a7_neon-vfpv4
+          - arm_cortex-a7_vfpv4
+          - arm_cortex-a8_vfpv3
+          - arm_cortex-a9
+          - arm_cortex-a9_neon
+          - arm_cortex-a9_vfpv3-d16
+          - arm_fa526
+          - arm_xscale
+          #- mips64_mips64r2
+          #- mips64_octeonplus
+          - mips64el_mips64r2
+          - mips_24kc
+          - mips_4kec
+          - mips_mips32
+          - mipsel_24kc
+          - mipsel_24kc_24kf
+          - mipsel_74kc
+          - mipsel_mips32
+          - x86_64
+          - loongarch64_generic
+          - riscv64_riscv64
+          
+        tag:
+          #- openwrt-24.10
+          - openwrt-25.12
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          elif [[ -n "${{ inputs.tag }}" ]]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=" >> "$GITHUB_OUTPUT"
+          fi
+          
+      - name: Setup Environment
+        run: |
+          echo "SKIP_BUILD=0" >> $GITHUB_ENV
+          if [ "${{ matrix.tag }}" = "openwrt-25.12" ] && [ "${{ matrix.arch }}" = "riscv64_riscv64" ]; then
+            echo "EFFECTIVE_ARCH=riscv64_generic" >> $GITHUB_ENV
+            echo "ARCH=riscv64_generic-${{ matrix.tag }}" >> $GITHUB_ENV
+          elif [ "${{ matrix.tag }}" = "openwrt-25.12" ] && [ "${{ matrix.arch }}" = "mips_4kec" ]; then
+            echo "SKIP_BUILD=1" >> $GITHUB_ENV
+          else
+            echo "EFFECTIVE_ARCH=${{ matrix.arch }}" >> $GITHUB_ENV
+            echo "ARCH=${{ matrix.arch }}-${{ matrix.tag }}" >> $GITHUB_ENV
+          fi
+          
+      - name: Build Packages
+        if: env.SKIP_BUILD == '0'
+        uses: sbwml/openwrt-gh-action-sdk@go1.27
+        env:
+          # 将镜像源从 ghcr.io 换成 Docker Hub
+          #CONTAINER: openwrt/sdk
+          # 如果 Docker Hub 也不行，可以试试：
+          #CONTAINER: quay.io/openwrt/sdk
+          FEEDNAME: packages_ci
+          PACKAGES: "admask luci-app-admask"
+          NO_REFRESH_CHECK: true
+          #V: s  # 开启详细日志
+
+
+      - name: Create compress files
+        if: env.SKIP_BUILD == '0'
+        run: |
+          # 如果目录不存在，直接报错停止，避免上传空文件
+          ls -la bin/packages/${{ env.EFFECTIVE_ARCH }}/packages_ci/
+          tar -zcvf AdMask-${{ env.ARCH }}.tar.gz -C bin/packages/${{ env.EFFECTIVE_ARCH }}/ packages_ci
+
+      - name: Upload tar.gz
+        if: env.SKIP_BUILD == '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: AdMask-${{ env.ARCH }}
+          path: AdMask-${{ env.ARCH }}.tar.gz
+
+  # ============================================================
+  # 独立的 Release 任务
+  # ============================================================
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    # 只有在有 tag 输入（或 push tag）时才执行
+    if: needs.build.outputs.release_tag != ''
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Display files
+        run: ls -la artifacts/
+
+      - name: Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ needs.build.outputs.release_tag }}
+          name: ${{ needs.build.outputs.release_tag }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          replacesArtifacts: true
+          prerelease: false
+          artifacts: "artifacts/*.tar.gz"

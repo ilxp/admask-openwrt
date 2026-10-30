@@ -1,0 +1,735 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_Hans\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+# --- 顶部标签页 (Tabs) ---
+msgid "Overview"
+msgstr "概览"
+
+msgid "Basic Settings"
+msgstr "基本设置"
+
+msgid "Certificate Management"
+msgstr "证书管理"
+
+msgid "Rule Subscriptions"
+msgstr "规则订阅"
+
+msgid "Whitelist & Blacklist"
+msgstr "黑白名单"
+
+msgid "Custom Rules"
+msgstr "自定义规则"
+
+msgid "HLS Rules"
+msgstr "HLS 规则"
+
+msgid "Video Service Rules"
+msgstr "视频服务规则"
+
+msgid "CDN Passthrough"
+msgstr "CDN 直通"
+
+msgid "CDN Passthrough Whitelist"
+msgstr "CDN 直通白名单"
+
+msgid "Access Control"
+msgstr "访问控制"
+
+msgid "Business Logs"
+msgstr "业务日志"
+
+# --- 通用按钮与状态 ---
+msgid "Enable"
+msgstr "启用"
+
+msgid "Save & Restart"
+msgstr "保存并重启"
+
+msgid "Saving and restarting..."
+msgstr "正在保存并重启..."
+
+msgid "Saved successfully — AdMask has restarted and is effective!"
+msgstr "保存成功——AdMask 已重启生效！"
+
+msgid "Save failed: "
+msgstr "保存失败："
+
+msgid "Service failed to restart! Please check the YAML syntax."
+msgstr "服务重启失败！请检查 YAML 语法。"
+
+msgid "Service failed to restart! Please check the rule syntax."
+msgstr "服务重启失败！请检查规则语法。"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Running Normally"
+msgstr "运行正常"
+
+msgid "Not Generated"
+msgstr "未生成"
+
+msgid "Generated"
+msgstr "已生成"
+
+msgid "bytes"
+msgstr "字节"
+
+msgid "Not detected"
+msgstr "未检测到"
+
+msgid "Not detected (No public IPv6)"
+msgstr "未检测到（无公网 IPv6）"
+
+# --- 概览页 (Overview) 核心修复区 ---
+msgid "AdMask Status Overview"
+msgstr "AdMask 状态总览"
+
+msgid "AdMask (Adversary Masking) — deeply analyzes network traffic to precisely intercept scams, gambling, phishing, and other malicious sites, blocking threats, purifying the network, and guarding your privacy."
+msgstr "AdMask (Adversary Masking) —— 深度解析网络流量，精准拦截电诈、博彩、钓鱼等恶意站点，为你阻断威胁、净化网络、守护隐私。"
+
+msgid "Current Status"
+msgstr "当前状态"
+
+msgid "Running"
+msgstr "运行中"
+
+msgid "Stopped"
+msgstr "已停止"
+
+msgid "Running Mode"
+msgstr "运行模式"
+
+msgid "Instance Mode"
+msgstr "实例模式"
+
+msgid "Single instance"
+msgstr "单实例"
+
+msgid "Multi-instance (%d)"
+msgstr "多实例 (%d)"
+
+msgid "Transparent Proxy"
+msgstr "透明代理"
+
+msgid "Explicit Proxy"
+msgstr "显式代理"
+
+msgid "Listen Address"
+msgstr "监听地址"
+
+msgid "Filter Engine"
+msgstr "过滤引擎"
+
+msgid "Go Basic Protection Engine"
+msgstr "Go 基础防护引擎"
+
+msgid "Auto (auto)"
+msgstr "自动（auto）"
+
+msgid "(Rust Core Protection)"
+msgstr "（Rust 核心防护）"
+
+msgid "Proxy Firewall"
+msgstr "代理防火墙"
+
+msgid "Enabled (Blocking QUIC)"
+msgstr "已启用（阻断 QUIC）"
+
+msgid "Enabled (Not Blocking QUIC)"
+msgstr "已启用（未阻断 QUIC）"
+
+msgid "Closed"
+msgstr "已关闭"
+
+msgid "Loaded Rules"
+msgstr "已加载规则"
+
+msgid "%s rules"
+msgstr "%s 条"
+
+msgid "(Not loaded yet)"
+msgstr "（尚未加载）"
+
+msgid "Rule Database Loading"
+msgstr "规则库加载"
+
+msgid "Completed"
+msgstr "已完成"
+
+msgid "Loading"
+msgstr "加载中"
+
+msgid "Protected Devices"
+msgstr "受保护设备"
+
+msgid "%d units"
+msgstr "%d 台"
+
+msgid "Rule Sources"
+msgstr "规则源"
+
+msgid "%d items"
+msgstr "%d 个"
+
+msgid "CA Certificate"
+msgstr "CA 证书"
+
+msgid "Valid"
+msgstr "有效"
+
+msgid "CA Expiry Date"
+msgstr "CA 有效期"
+
+msgid "Element Picker"
+msgstr "元素拾取器"
+
+msgid "Enabled"
+msgstr "已启用"
+
+msgid "Not Enabled"
+msgstr "未启用"
+
+msgid "Engine Rules"
+msgstr "引擎规则"
+
+msgid "Engine Path"
+msgstr "引擎路径"
+
+msgid "HLS %d / DASH %d / Mixer %d / VAST %d"
+msgstr "HLS %d / DASH %d / Mixer %d / VAST %d"
+
+msgid "%d domains"
+msgstr "%d 个域名"
+
+msgid "Start Time"
+msgstr "启动时间"
+
+msgid "Version"
+msgstr "版本"
+
+msgid "Recent Blocked Threats"
+msgstr "最近阻断威胁"
+
+msgid "Stop"
+msgstr "停止"
+
+msgid "Start"
+msgstr "启动"
+
+msgid "Restart"
+msgstr "重启"
+
+msgid "Reload Config"
+msgstr "重载配置"
+
+msgid "(Requires openssl-util package)"
+msgstr "（需要 openssl-util 包）"
+
+msgid "(Expired)"
+msgstr "（已过期）"
+
+msgid "(%s days left)"
+msgstr "（剩余 %s 天）"
+
+msgid "(%s years left)"
+msgstr "（剩余 %s 年）"
+
+msgid "Operation successful: %s"
+msgstr "操作成功：%s"
+
+msgid "Operation failed: %s"
+msgstr "操作失败：%s"
+
+msgid "Operation Initiated"
+msgstr "操作已发起"
+
+msgid "Executing service operation: %s"
+msgstr "正在执行服务操作：%s"
+
+msgid "The background process is running. This page will automatically refresh in %d seconds."
+msgstr "后台进程正在运行，页面将在 %d 秒后自动刷新。"
+
+msgid "Refresh Now"
+msgstr "立即刷新"
+
+msgid "Unknown"
+msgstr "未知"
+
+msgid "Sub-engine failed to start or consecutive errors — automatically degraded to built-in urlfilter"
+msgstr "副引擎启动失败或连续错误——已自动降级到内置 urlfilter"
+
+msgid "(Runtime status not reported)"
+msgstr "（未报告运行状态）"
+
+msgid "(Config forced none)"
+msgstr "（配置强制无）"
+
+msgid "(Path: "
+msgstr "（路径："
+
+# --- 基本设置 (Basic Settings) ---
+msgid "AdMask core runtime parameters. Requires service restart to take effect."
+msgstr "AdMask 核心运行参数。修改后需重启服务生效。"
+
+msgid "General Parameters"
+msgstr "常规参数"
+
+msgid "Transparent proxy must listen on 0.0.0.0 — do not change to 127.0.0.1. Firewall rules will sync automatically when changing ports."
+msgstr "透明代理必须监听 0.0.0.0——不要改成 127.0.0.1。改端口时防火墙规则会自动同步。"
+
+msgid "Rule Source Auto-Update Interval"
+msgstr "规则源自动更新间隔"
+
+msgid "6 Hours"
+msgstr "6 小时"
+
+msgid "12 Hours"
+msgstr "12 小时"
+
+msgid "24 Hours"
+msgstr "24 小时"
+
+msgid "7 Days"
+msgstr "7 天"
+
+msgid "Generic CSS Injection Limit"
+msgstr "Generic CSS 注入上限"
+
+msgid "Controls the injection of generic CSS (element hiding rules not bound to a specific host).<br><b>1500</b> (Default, Strongly Recommended): Covers the current 1.2MB measured size while preventing extreme bloat.<br><b>0</b> = Unlimited: Full injection (for desktop / x86).<br><b>Positive number</b> = Manual value (KB).<br>⚠️ Warning: Do NOT set to 500~800! ABP generic rules are \"all or nothing\"; setting it too low will cause page element hiding to completely fail.<br>Requires restart to take effect."
+msgstr "控制 generic CSS（不绑定 host 的元素隐藏规则）的注入。<br><b>1500</b>（默认，强推）：覆盖当前 1.2MB 实测大小，同时防极端膨胀。<br><b>0</b> = 不限：全量注入（桌面 / x86 可用）。<br><b>正数</b> = 手动值（KB）。<br>⚠️ 警告：请勿设置为 500~800！ABP 的 generic 规则是「全有或全无」，设置过低会导致页面元素隐藏完全失效。<br>修改后需重启 AdMask 生效。"
+
+msgid "Security Filter Engine"
+msgstr "安全过滤引擎"
+
+msgid "Auto-detect (Default, Recommended)"
+msgstr "自动查找（默认，推荐）"
+
+msgid "Force built-in Go engine (Disable sub-engine)"
+msgstr "强制内嵌 Go 引擎（禁用副引擎）"
+
+msgid "<b>auto</b> (Default): Automatically searches for the <code>adblock-engine</code> binary in the same directory as the main program on startup. Uses Rust core if found, otherwise degrades to built-in Go engine.<br>⚠️ Requires restart to take effect."
+msgstr "<b>auto</b>（默认）：启动时自动在主程序同目录下查找 <code>adblock-engine</code> 二进制。找到就使用 Rust 核心，找不到则自动降级到内嵌 Go 引擎。<br>⚠️ 修改后需重启 AdMask 生效。"
+
+msgid "Upstream Proxy"
+msgstr "上游代理"
+
+msgid "Enter the local HTTP proxy address if you use PassWall. LAN IPs are auto-excluded to prevent loops.<br>Example: <code>http://127.0.0.1:7890</code> (Leave blank for direct)."
+msgstr "如果您使用 PassWall 等代理，请填写其本地 HTTP 代理地址。内网 IP 已自动排除以防死循环。<br>示例：<code>http://127.0.0.1:7890</code>（留空则直连）。"
+
+msgid "Offline Mode"
+msgstr "离线模式"
+
+msgid "Do not load online threat intelligence sources — use manual rules only"
+msgstr "不加载在线威胁情报源——只用手动规则"
+
+msgid "Certificate Cache Size"
+msgstr "证书缓存数量"
+
+msgid "Verbose Debug Logs"
+msgstr "详细调试日志"
+
+msgid "When enabled (-v), AdMask records massive underlying debug information (e.g., every connection, every allow). ⚠️ This drastically consumes CPU and rapidly bloats the log file. Please keep it OFF for daily use. (Regardless of whether it is enabled, key blocking logs are recorded in /var/log/admask-18080.log and can be viewed on the \"Logs\" page above.) Only enable temporarily when troubleshooting \"Why is a website not opening\" or \"Why is an ad not blocked\"."
+msgstr "开启后（-v），AdMask 会记录海量的底层调试信息（如每一次连接、每一次放行）。⚠️ 这会急剧消耗 CPU 并让日志文件迅速膨胀。日常请务必保持关闭。（无论是否开启，拦截威胁的关键战报都会记录在 /var/log/admask-18080.log 中，并可在上方“日志”页面查看。）仅在排查“为什么某个网站打不开”或“为什么某个广告没拦截”时临时开启。"
+
+msgid "Debug dump m3u8"
+msgstr "调试 dump m3u8"
+
+msgid "Save every m3u8 playlist to the dump directory (for debugging)."
+msgstr "把每个 m3u8 播放列表存盘到 dump 目录（调试用）。"
+
+msgid "Debug dump mixer JSON"
+msgstr "调试 dump mixer JSON"
+
+msgid "Save every mixer JSON response to the dump directory (for debugging)."
+msgstr "把每个 mixer JSON 响应存盘到 dump 目录（调试用）。"
+
+msgid "Dump Directory"
+msgstr "dump 目录"
+
+msgid "Shared save directory for m3u8 and mixer JSON.<br>⚠️ Only created when any of the dump switches above are turned on."
+msgstr "m3u8 与 mixer JSON 共用的存盘目录。<br>⚠️ 只有上面任一 dump 开关打开时才会创建。"
+
+msgid "Dump File Count Limit"
+msgstr "dump 文件数上限"
+
+msgid "Maximum number of files in the dump directory — triggers cleanup every 100 dumps if exceeded, deleting the oldest half.<br><b>0</b> = Unlimited (⚠️ Long-term operation may fill up disk)<br><b>Positive number</b> = Manual value: users with large disks can increase it (e.g., 50000)<br>Default is 10000 — occupies about 100 MB~1 GB of disk space (depending on file size)."
+msgstr "dump 目录文件数上限——超过后每 100 次 dump 触发一次清理，删除最旧的一半。<br><b>0</b> = 不限（⚠️ 长期运行可能撑爆磁盘）<br><b>正数</b> = 手动值：大磁盘用户可调大（如 50000）<br>默认 10000——占用磁盘约 100 MB~1 GB（视文件大小而定）。"
+
+msgid "Enable Element Picker"
+msgstr "启用元素拾取器"
+
+msgid "Press Ctrl+Shift+E on a page to pick and block any element. When enabled, an extra script is injected into every HTML page — websites may detect the presence of AdMask. Recommended to only enable temporarily when needed."
+msgstr "页面按 Ctrl+Shift+E 拾取任意元素并屏蔽。开启后每个 HTML 页面会多注入一段脚本——网站可检测到 AdMask 的存在。建议只在需要拾取时临时开启。"
+
+msgid "Streaming CDN Passthrough (Performance Optimization)"
+msgstr "流媒体 CDN 直通（性能优化）"
+
+msgid "Media CDN domains bypass security decryption — preserving HTTP/2/3 multiplexing, increasing video loading speed by 2-3 times, and significantly reducing router CPU/memory usage. Cost: trackers/ads on CDN domains are not filtered (actual impact is small — video ads mainly go through API/VAST layers). Disabling it intercepts everything: can filter ads on CDNs, but videos will noticeably slow down due to protocol degradation."
+msgstr "媒体 CDN 域名不做安全解密——保留 HTTP/2/3 多路复用，视频加载速度提升 2-3 倍，路由器 CPU/内存占用显著下降。代价：CDN 域名上的追踪器/广告不过滤（实际影响很小——视频广告主要走 API/VAST 层）。关闭则全部接管：能过滤 CDN 上的广告，但视频会因协议降级明显变慢。"
+
+# --- 证书管理 (Certificate Management) ---
+msgid "Certificate Management"
+msgstr "证书管理"
+
+msgid "Root Certificate Status"
+msgstr "根证书状态"
+
+msgid "Root Certificate (Public Key)"
+msgstr "根证书 (公钥)"
+
+msgid "Root Certificate Private Key"
+msgstr "根证书 (私钥)"
+
+msgid "Generated"
+msgstr "已生成"
+
+msgid "bytes"
+msgstr "字节"
+
+msgid "Not Generated"
+msgstr "未生成"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Running Normally"
+msgstr "运行正常"
+
+msgid "Certificate not fully generated — please restart AdMask in the \"Basic Settings\" page"
+msgstr "证书未完全生成 — 请前往“基础设置”页面重启 AdMask"
+
+msgid "Strongly Recommended: Once the certificate is generated, please immediately download a migration backup in Step 2. If you reinstall the system later, simply restore the backup so all client devices won't need to reinstall certificates!"
+msgstr "💡 强烈建议：证书生成后，请立即在第 2 步下载迁移备份。以后重装系统或恢复出厂设置时，直接恢复备份即可，所有客户端无需重新安装证书！"
+
+msgid "1. Download Client CA Certificate"
+msgstr "1. 下载客户端 CA 证书"
+
+msgid "Install the Root CA on client devices so AdMask can decrypt and analyze traffic."
+msgstr "在客户端设备上安装根 CA 证书，以便 AdMask 解密和分析流量。"
+
+msgid "Download Root CA (.crt)"
+msgstr "下载根 CA 证书 (.crt)"
+
+msgid "Direct URL:"
+msgstr "直链地址："
+
+msgid "Need the full certificate chain (Root + Intermediate) for older devices?"
+msgstr "老旧设备需要完整的证书链（根证书 + 中间证书）？"
+
+msgid "Download Bundle (.tar)"
+msgstr "下载证书链包 (.tar)"
+
+msgid "2. Migration & Backup"
+msgstr "2. 迁移与备份"
+
+msgid "Contains CA PRIVATE KEY — anyone with this file can decrypt ALL HTTPS traffic on your network!"
+msgstr "⚠️ 包含 CA 私钥 — 任何持有此文件的人都可以解密您网络上的所有 HTTPS 流量！"
+
+msgid "Only use when migrating AdMask to a new router or reinstalling firmware. NOT for client certificate installation. Generated on-demand — NEVER stored on the router."
+msgstr "仅限在将 AdMask 迁移到新路由器或重装固件时使用。不可用于客户端证书安装。按需生成 — 绝不在路由器上留存。"
+
+msgid "Download Migration Backup"
+msgstr "🔐 下载迁移备份"
+
+msgid "Restore from Backup"
+msgstr "⬆️ 从备份恢复"
+
+msgid "3. Regenerate Root CA (Dangerous)"
+msgstr "3. 重新生成根 CA (危险操作)"
+
+msgid "After regeneration, all devices will need to reinstall the new CA certificate, otherwise they will lose internet access!"
+msgstr "重新生成后，所有设备都需要重新安装新的 CA 证书，否则将无法上网！"
+
+msgid "Regenerate CA"
+msgstr "🔄 重新生成 CA"
+
+# --- 证书弹窗与提示消息 (Alerts & Notifications) ---
+
+msgid "CA file missing"
+msgstr "CA 文件缺失"
+
+msgid "Public key bundle downloaded"
+msgstr "公钥包下载已开始"
+
+msgid "Backup failed:"
+msgstr "备份失败："
+
+msgid "Full backup contains your CA PRIVATE KEY. Anyone with this file can decrypt all HTTPS traffic on your network. Continue?"
+msgstr "完整备份包含 CA 私钥。任何持有此文件的人都可以解密您网络上的所有 HTTPS 流量。是否继续？"
+
+msgid "CA files missing"
+msgstr "CA 文件缺失"
+
+msgid "Migration backup downloaded. STORE SECURELY!"
+msgstr "迁移备份下载已开始。请安全保管！"
+
+msgid "Migration backup failed:"
+msgstr "迁移备份失败："
+
+msgid "Please select a backup file first"
+msgstr "请先选择一个备份文件"
+
+msgid "Restore will overwrite the current CA. Are you sure you want to continue?"
+msgstr "恢复操作将覆盖当前的 CA，您确定要继续吗？"
+
+msgid "Uploading and restoring, please wait..."
+msgstr "正在上传并恢复，请稍候..."
+
+msgid "Invalid backup file format. Only .tar files are supported."
+msgstr "备份文件格式无效。仅支持 .tar 文件。"
+
+msgid "Failed to read file"
+msgstr "读取文件失败"
+
+msgid "✅ Processing complete, AdMask is restarting..."
+msgstr "✅ 处理完成，AdMask 正在重启..."
+
+msgid "Restore failed:"
+msgstr "恢复失败："
+
+msgid "Are you sure you want to regenerate the CA?"
+msgstr "您确定要重新生成 CA 吗？"
+
+msgid "Type \"REGENERATE\" to confirm: "
+msgstr "输入“REGENERATE”以确认："
+
+msgid "CA regenerated, restarting..."
+msgstr "CA 已重新生成，正在重启..."
+
+# --- 订阅管理 (Subscriptions) ---
+msgid "Configure ABP rule subscription sources. You can add anti-fraud, malicious blocking, or basic ad-blocking rules. Requires service restart to take effect."
+msgstr "配置 ABP 规则订阅源。可以添加反诈、恶意拦截或基础去广告规则。修改后需重启服务生效。"
+
+msgid "Name"
+msgstr "名称"
+
+msgid "Type"
+msgstr "类型"
+
+msgid "Online Subscription"
+msgstr "在线订阅"
+
+msgid "Local File"
+msgstr "本地文件"
+
+msgid "Subscription URL"
+msgstr "订阅 URL"
+
+msgid "Local Path"
+msgstr "本地路径"
+
+msgid "Update Interval"
+msgstr "更新间隔"
+
+msgid "Go duration format: 30m / 6h / 24h / 168h"
+msgstr "时长格式（Go duration）：30m / 6h / 24h / 168h"
+
+# --- 黑白名单 (Whitelist & Blacklist) ---
+msgid "Whitelist & Blacklist Management"
+msgstr "黑白名单管理"
+
+msgid "Whitelist (Trusted Allow)"
+msgstr "白名单（信任放行）"
+
+msgid "Syntax: @@||domain^ — Allow this domain and all its subdomains. Used to avoid accidentally blocking legitimate services. Supports ! comments."
+msgstr "语法：@@||domain^ —— 放行该域名及其所有子域。用于避免误拦截合法业务。支持 ! 注释。"
+
+msgid "Blacklist (Force Block)"
+msgstr "黑名单（强制拦截）"
+
+msgid "Syntax: ||domain^ — Block this domain and all its subdomains. You can add scam, malicious, or unwanted websites here. Supports ! comments."
+msgstr "语法：||domain^ —— 拦截该域名及其所有子域。可以填入诈骗、恶意或你不想访问的网站。支持 ! 注释。"
+
+# --- 自定义规则 (Custom Rules) ---
+msgid "Add custom blocking domains, CSS hiding rules, or custom defense scripts here."
+msgstr "在此处添加自定义的拦截域名、CSS 隐藏规则或自定义防御脚本。"
+
+# --- HLS 规则 ---
+msgid "Used to identify and block malicious ad segments inserted in HLS streams."
+msgstr "用于识别和阻断 HLS 流媒体中插入的恶意广告片段。"
+
+# --- 视频服务规则 (Video Service Rules) ---
+msgid "Deep filtering for video services, including API response interception and streaming ad blocking."
+msgstr "针对视频服务进行深度过滤，包括 API 响应拦截和流媒体广告阻断。"
+
+# --- CDN 直通 (CDN Passthrough) ---
+msgid "Domains listed here will bypass security decryption and establish direct encrypted connections to improve media loading speed. Passthrough will abandon security protection for these domains."
+msgstr "列在此处的域名将跳过安全解密，直接建立加密连接，以提升媒体加载速度。直通将放弃该域名的安全防护。"
+
+# --- 访问控制 (Access Control) ---
+msgid "Select which devices/networks use AdMask. All sources are randomly distributed among all instances by default — each connection is randomly assigned to an instance by nft for automatic load balancing."
+msgstr "选择哪些设备/网段走 AdMask 代理。所有源默认随机分发到全部实例——每连接由 nft 独立随机选择实例，自动负载均衡。"
+
+msgid "Global Settings"
+msgstr "全局设置"
+
+msgid "Enable Proxy"
+msgstr "启用代理"
+
+msgid "Master switch — when disabled, traffic from all devices bypasses AdMask."
+msgstr "主开关——关闭后所有设备的流量不再经过 AdMask。"
+
+msgid "LAN Subnet (IPv4)"
+msgstr "LAN 网段（IPv4）"
+
+msgid "LAN Subnet (IPv6)"
+msgstr "LAN 网段（IPv6）"
+
+msgid "Block QUIC Protocol"
+msgstr "阻断 QUIC 协议"
+
+msgid "Block UDP 443 — prevents malware or websites from bypassing the security gateway via QUIC"
+msgstr "屏蔽 UDP 443——防止恶意软件或网站通过 QUIC 绕过安全网关"
+
+msgid "Extra Instances"
+msgstr "扩展实例"
+
+msgid "Extra instances — additional AdMask processes besides 'main'. The 'main' instance listens on the configured address and cannot be deleted. All protected sources are distributed among all instances (including 'main') by default."
+msgstr "扩展实例——除 main 之外的额外 AdMask 进程。main 实例固定监听配置的地址，不可删除。所有受保护源默认随机分发到全部实例（含 main）。"
+
+msgid "Port"
+msgstr "端口"
+
+msgid "Must differ from the main port and not conflict with other extra instances."
+msgstr "必须与 main 端口不同——且与其他扩展实例不冲突。"
+
+msgid "Protected Sources"
+msgstr "受保护源"
+
+msgid "Protected Sources — matching traffic passes through AdMask. Supports MAC / IPv4 / IPv6 / CIDR (auto-detected). Protected devices must install the Root CA certificate."
+msgstr "受保护源——匹配的流量经过 AdMask 代理。支持 MAC 地址 / IPv4 / IPv6 / CIDR（自动识别格式）。受保护设备需安装根 CA 证书。"
+
+msgid "(Optional)"
+msgstr "（选填）"
+
+msgid "Source"
+msgstr "源地址"
+
+msgid "MAC / IPv4 / IPv6 / CIDR — auto-detected formats:<br><code>aa:bb:cc:dd:ee:ff</code> → MAC<br><code>192.168.1.50</code> → IPv4<br><code>192.168.3.0/24</code> → IPv4 CIDR<br><code>2001:db8::1</code> → IPv6<br><code>2001:db8::/64</code> → IPv6 CIDR"
+msgstr "MAC / IPv4 / IPv6 / CIDR——格式自动识别：<br><code>aa:bb:cc:dd:ee:ff</code> → MAC<br><code>192.168.1.50</code> → IPv4<br><code>192.168.3.0/24</code> → IPv4 CIDR<br><code>2001:db8::1</code> → IPv6<br><code>2001:db8::/64</code> → IPv6 CIDR"
+
+msgid "aa:bb:cc:dd:ee:ff or 192.168.3.0/24"
+msgstr "aa:bb:cc:dd:ee:ff 或 192.168.3.0/24"
+
+msgid "Invalid format: please enter a valid MAC, IPv4, IPv6, or CIDR address"
+msgstr "格式错误：请输入合法的 MAC、IPv4、IPv6 或 CIDR 地址"
+
+msgid "No MAC"
+msgstr "无 MAC"
+
+msgid "Protocol"
+msgstr "协议"
+
+msgid "IPv4 + IPv6"
+msgstr "IPv4 + IPv6"
+
+msgid "IPv4 Only"
+msgstr "仅 IPv4"
+
+msgid "IPv6 Only"
+msgstr "仅 IPv6"
+
+msgid "Only applies when source is a MAC — IP/CIDR sources determine the protocol inherently."
+msgstr "仅当 source 是 MAC 时生效——IP/CIDR 源本身就决定了协议。"
+
+msgid "Ports"
+msgstr "端口"
+
+msgid "Do Not Intercept"
+msgstr "不接管"
+
+msgid "HTTP (80)"
+msgstr "HTTP (80)"
+
+msgid "HTTP + HTTPS"
+msgstr "HTTP + HTTPS"
+
+msgid "All Ports"
+msgstr "全端口"
+
+msgid "Runtime nftables Rules"
+msgstr "运行时的 nftables 规则"
+
+msgid "Below are the active nftables rules in the kernel — traffic is matched exactly by MAC / IP and randomly distributed across all instances."
+msgstr "以下是当前内核里生效的 nftables 规则——按 MAC / IP 精确匹配，流量被随机分发到全部实例。"
+
+msgid "No nft rules currently active."
+msgstr "当前没有生效的 nftables 规则。"
+
+# --- 日志 (Runtime Logs) ---
+msgid "To view system initialization logs (firewall rules, DNS configuration, and multi-instance assignment), please check /var/log/admask.log via SSH."
+msgstr "如需查看系统底层初始化日志（防火墙规则、DNS 配置、多实例分配），请通过 SSH 查看 /var/log/admask.log。"
+
+msgid "(No business logs) Logs generate only on block. Enable \"Verbose Log\" for details."
+msgstr "（暂无业务日志）仅在拦截时生成，开启“详细日志”查看全部。"
+
+msgid "(No matching results) Use spaces for multiple keywords (AND)."
+msgstr "（无匹配结果）多个关键字用空格分隔（AND 逻辑）。"
+
+msgid "Instance"
+msgstr "实例"
+
+msgid "All Instances"
+msgstr "全部实例"
+
+msgid "Filter"
+msgstr "筛选"
+
+msgid "Filter keywords (space separated, AND logic)"
+msgstr "筛选关键字（空格分隔，AND 语义）"
+
+msgid "Clear Filter"
+msgstr "清除筛选"
+
+msgid "Nothing to copy"
+msgstr "没有可复制的内容"
+
+msgid "Logs copied to clipboard"
+msgstr "日志已复制到剪贴板"
+
+msgid "Copy failed"
+msgstr "复制失败"
+
+msgid "Logs completely cleared"
+msgstr "日志已彻底清空"
+
+msgid "Clear failed: "
+msgstr "清空失败："
+
+msgid "Refreshed"
+msgstr "已刷新"
+
+msgid "Refresh"
+msgstr "刷新"
+
+msgid "Jump to Latest"
+msgstr "跳到最新"
+
+msgid "Total "
+msgstr "总计 "
+
+msgid " lines"
+msgstr " 行"
+
+msgid "Filtered: "
+msgstr "已筛选："
+
+msgid " lines / Total "
+msgstr " 行 / 总计 "
+
+msgid "Copy Logs"
+msgstr "一键复制"
+
+msgid "Clear Logs"
+msgstr "清空日志"
+
+msgid "Are you sure you want to clear all business logs?"
+msgstr "确定要清空所有业务日志吗？"
+
+msgid "This operation cannot be undone and will free up memory space."
+msgstr "此操作不可恢复，且会释放内存空间。"

@@ -1,0 +1,116 @@
+! AdMask 自定义规则 —— 元素隐藏 + Scriptlet + 自定义 JS
+!
+! 语法：
+!   domain##selector                        元素隐藏（CSS）
+!   domain#@#selector                       元素隐藏例外
+!   domain#%#//scriptlet('name', 'arg')     AdGuard Scriptlet
+!   domain##+js(name, arg)                  uBlock Scriptlet
+!   domain#%#custom:<js>                    自定义 JS（多行用 <<< >>>）
+!
+! ⚠️ 需重启 AdMask
+!
+! ⚠️ 本文件不预置任何具体网站规则。
+!    请根据你的实际需求，将下面的占位符替换为需要处理的域名和选择器。
+!    请勿添加针对特定经营者的规则——这可能违反相关法规。
+
+! ============================================================
+! 视频站 —— 元素隐藏
+! ============================================================
+! 用途：隐藏视频播放页的广告横幅、弹窗、推荐位
+! 示例：
+! video-site.example##.ad-banner
+! video-site.example##.popup-ad
+!
+! 占位符：
+! your-video-site.example##.ad-container
+! your-video-site.example##.popup-overlay
+
+! ============================================================
+! 视频站 —— Scriptlet
+! ============================================================
+! 用途：通过 Scriptlet 禁用播放器的广告检测或广告标志位
+! 示例：
+! video-site.example#%#//scriptlet('set-constant', 'PLAYER.adEnabled', 'false')
+!
+! 占位符：
+! your-video-site.example#%#//scriptlet('set-constant', 'PLAYER.adEnabled', 'false')
+! your-video-site.example#%#//scriptlet('remove-class', 'ad-active', 'body')
+
+! ============================================================
+! 社交 / 内容平台 —— 元素隐藏
+! ============================================================
+! 用途：隐藏信息流广告、推荐卡片、推广横幅
+! 示例：
+! social-platform.example##.ad-feed-item
+! social-platform.example##.sponsored-post
+!
+! 占位符：
+! your-social-site.example##.ad-feed-item
+! your-content-site.example##.sponsored-card
+
+! ============================================================
+! 社交 / 内容平台 —— Scriptlet
+! ============================================================
+! 用途：移除广告相关的 class、属性，或阻止广告弹窗
+! 示例：
+! social-platform.example#%#//scriptlet('remove-class', 'ad-visible', 'body')
+! social-platform.example#%#//scriptlet('remove-attr', 'data-ad', '.card')
+!
+! 占位符：
+! your-social-site.example#%#//scriptlet('remove-class', 'ad-visible', 'body')
+! your-content-site.example#%#//scriptlet('remove-attr', 'data-ad', '.post')
+
+! ============================================================
+! 论坛 / 社区 —— 元素隐藏
+! ============================================================
+! 用途：隐藏论坛侧栏广告、底部横幅、浮动广告
+! 示例：
+! forum.example##.sidebar-ad
+! forum.example##.footer-banner
+!
+! 占位符：
+! your-forum.example##.sidebar-ad
+! your-community.example##.floating-ad
+
+! ============================================================
+! 新闻 / 资讯 —— 元素隐藏
+! ============================================================
+! 用途：隐藏新闻站的信息流广告、推荐位、弹窗
+! 示例：
+! news.example##.article-ad
+! news.example##.recommend-box
+!
+! 占位符：
+! your-news-site.example##.article-ad
+! your-news-site.example##.promo-box
+
+! ============================================================
+! 自定义 JS（多行）
+! ============================================================
+! 用途：执行自定义 JavaScript 处理页面广告（如修改全局变量、
+!       动态移除广告元素）。仅从本地规则加载，远程订阅必须用
+!       #%#custom+remote:。
+!
+! 示例：
+! your-site.example#%#custom:<<<
+! (function(){
+!   if (window.adConfig) {
+!     window.adConfig.enabled = false;
+!   }
+! })();
+! >>>
+!
+! 占位符：
+! your-custom-site.example#%#custom:<<<
+! (function(){
+!   // 在此编写你的自定义 JS
+! })();
+! >>>
+
+! ============================================================
+! 自定义
+! ============================================================
+! 在此处添加你自己的元素隐藏 / Scriptlet / custom JS 规则
+!
+! your-site.example##.your-selector
+! your-site.example#%#//scriptlet('set-constant', 'your.flag', 'false')

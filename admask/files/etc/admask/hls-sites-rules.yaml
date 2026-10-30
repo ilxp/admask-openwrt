@@ -1,0 +1,73 @@
+# AdMask 站点广告检测规则
+#
+# 字段说明：
+#   - domain:          站点域名（自动匹配子域，如 www.video-site-a.example 匹配 video-site-a.example）
+#   - ad_paths:        广告分片的路径关键词（作为强特征，命中即判定）
+#   - ad_hosts:        广告分片的域名（作为强特征，命中即判定）
+#   - score_threshold: 覆盖默认阈值 4（可选）
+#   - enabled:         是否启用
+#
+# AdMask HLS 站点规则
+#
+# 匹配规则：hostname == domain 或 hostname 是 domain 的子域
+# 评分阈值：默认 4 分
+#
+# 字段说明：
+#   domain          - 站点主域名（必填）
+#   ad_paths        - 广告路径关键词，命中 +10 分
+#   ad_hosts        - 广告域名，命中 +10 分
+#   score_threshold - 判定阈值，默认 4
+#   tiny_duration   - 绝对过短阈值（秒），默认 3.0
+#   enabled         - 是否启用，缺省 true
+
+sites:
+  # ============================================
+  # 示例视频站 A
+  # ============================================
+  - domain: video-site-a.example
+    ad_paths:
+      - /ad/
+      - /ads/
+      - /preroll/
+      - /midroll/
+    ad_hosts:
+      - ad.video-site-a.example
+      - api.ad.video-site-a.example
+    score_threshold: 6
+    tiny_duration: 2.5
+    enabled: true
+
+  # ============================================
+  # 示例视频站 B
+  # ============================================
+  - domain: video-site-b.example
+    ad_paths:
+      - /ads/
+      - /ad/
+    ad_hosts:
+      - ad.video-site-b.example
+    score_threshold: 5
+    enabled: true
+
+  # ============================================
+  # 示例视频站 C
+  # ============================================
+  - domain: video-site-c.example
+    ad_paths:
+      - /ad/
+    ad_hosts:
+      - ad.video-site-c.example
+    enabled: true
+
+  # ============================================
+  # 示例视频站 D
+  # ============================================
+  - domain: video-site-d.example
+    ad_paths:
+      - /ads/
+      - /preroll/
+    ad_hosts:
+      - ad.video-site-d.example
+    score_threshold: 6
+    tiny_duration: 2.0
+    enabled: true

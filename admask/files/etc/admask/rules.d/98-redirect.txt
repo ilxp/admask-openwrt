@@ -1,0 +1,63 @@
+! AdMask URL 重定向示例
+!
+! 语法：||domain/path$redirect=<目标>
+!
+! 目标可以是：
+!   内置资源名（noop.js / noop.css / noop.txt / noop.json / noop.mp4 / empty / 1x1-transparent.gif）
+!   完整 URL（http:// 或 https:// 开头 → 302 重定向）
+!
+! ⚠️ 本文件不预置任何具体网站规则。
+!    请根据你的实际需求，将下面的占位符替换为需要重定向的域名和路径。
+
+! ============================================================
+! 内置资源 —— 推荐（无网络往返）
+! ============================================================
+
+! 追踪像素 → 204 空响应
+||example.com/analytics.gif$redirect=empty
+||example.com/pixel.gif$redirect=empty
+
+! 广告 JS → 空 JS（脚本"正常"加载，无副作用）
+||tracker.example.com/track.js$redirect=noop.js
+||ads.example.com/banner.js$redirect=noop.js
+
+! 广告 CSS → 空 CSS
+||ads.example.com/style.css$redirect=noop.css
+
+! 广告 API → 空 JSON
+||ads.example.com/api/config$redirect=noop.json
+
+! 广告视频 → 1 秒静音 MP4（播放器"正常"播 1 秒后继续正片）
+||example.com/ad.mp4$redirect=noop.mp4
+||example.com/preroll/video.mp4$redirect=noop.mp4
+
+! 广告图片 → 透明 GIF
+||ads.example.com/pixel.png$redirect=1x1-transparent.gif
+
+! ============================================================
+! 完整 URL —— 302 重定向到指定 URL（多一次 RTT）
+! ============================================================
+
+! 广告视频 → 你自己的 CDN 的静音视频
+||example.com/ad/video.mp4$redirect=https://your-cdn.com/silent-1s.mp4
+
+! 广告 JS → 你自己的空白脚本
+||tracker.example.com/analytics.js$redirect=https://your-cdn.com/empty.js
+
+! ============================================================
+! 资源类型限定（可选）
+! ============================================================
+
+! 只对 $script 类型生效
+||example.com/track$redirect=noop.js$script
+
+! 只对 $image 类型生效
+||example.com/pixel$redirect=empty$image
+
+! ============================================================
+! 自定义
+! ============================================================
+! 在此处添加你自己的 $redirect 规则
+!
+! ||your-domain.example/path$redirect=noop.js
+! ||your-domain.example/path$redirect=https://your-cdn.com/your-resource

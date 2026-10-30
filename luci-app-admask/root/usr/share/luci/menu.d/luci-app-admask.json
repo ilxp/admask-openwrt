@@ -1,0 +1,67 @@
+{
+	"admin/services/admask": {
+		"title": "AdMask",
+		"order": 60,
+		"action": {
+			"type": "firstchild"
+		},
+		"depends": {
+			"acl": ["luci-app-admask"]
+		}
+	},
+	"admin/services/admask/overview": {
+		"title": "Overview",
+		"order": 10,
+		"action": { "type": "view", "path": "admask/overview" }
+	},
+	"admin/services/admask/settings": {
+		"title": "Basic Settings",
+		"order": 20,
+		"action": { "type": "view", "path": "admask/settings" }
+	},
+	"admin/services/admask/certificate": {
+		"title": "Certificate Management",
+		"order": 30,
+		"action": { "type": "view", "path": "admask/certificate" }
+	},
+	"admin/services/admask/subscriptions": {
+		"title": "Rule Subscriptions",
+		"order": 40,
+		"action": { "type": "view", "path": "admask/subscriptions" }
+	},
+	"admin/services/admask/list": {
+		"title": "Whitelist & Blacklist",
+		"order": 50,
+		"action": { "type": "view", "path": "admask/list" }
+	},
+	"admin/services/admask/custom": {
+		"title": "Custom Rules",
+		"order": 60,
+		"action": { "type": "view", "path": "admask/custom" }
+	},
+	"admin/services/admask/hls-rules": {
+		"title": "HLS Rules",
+		"order": 70,
+		"action": { "type": "view", "path": "admask/hls-rules" }
+	},
+	"admin/services/admask/video-rules": {
+		"title": "Video Service Rules",
+		"order": 80,
+		"action": { "type": "view", "path": "admask/video-rules" }
+	},
+	"admin/services/admask/cdn-passthrough": {
+		"title": "CDN Passthrough",
+		"order": 90,
+		"action": { "type": "view", "path": "admask/cdn-passthrough" }
+	},
+	"admin/services/admask/access": {
+		"title": "Access Control",
+		"order": 95,
+		"action": { "type": "view", "path": "admask/access" }
+	},
+	"admin/services/admask/logs": {
+		"title": "Business Logs",
+		"order": 100,
+		"action": { "type": "view", "path": "admask/logs" }
+	}
+}

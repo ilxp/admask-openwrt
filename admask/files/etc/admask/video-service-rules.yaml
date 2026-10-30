@@ -1,0 +1,296 @@
+# 视频 App 广告过滤规则
+#
+# 设计原则：
+#   1. 只拦广告上报/SDK/素材，不拦 UI 图标、弹幕、正片 CDN
+#   2. 与 mixer 引擎错开：/mixer 接口留给 mixer 改写，不在这里 BLOCK
+#   3. 路径尽量精确，宁可漏杀不要误杀
+#
+# 四层结构：
+#   block_domains  第一层：请求阶段直接 BLOCK
+#   api_rules      第二层：响应阶段 JSON 改写
+#   vast_rules     第三层：响应阶段 VAST XML 改写
+#   stream_rules   第四层：HLS/DASH 流广告识别
+#
+# VAST 规则的 mode 取值：
+#   empty        - 清空所有 <Ad>（默认，最保守）
+#   keep_first   - 只保留第一个 <Ad>，删除其余（旧名 first_only 兼容）
+#   keep_last    - 只保留最后一个 <Ad>，删除其余（旧名 last_only 兼容）
+#   replace_url  - 保留 <Ad>，把 <MediaFile> 的 URL 替换为 replace_url 指定的地址
+#
+# VAST 规则的额外选项：
+#   replace_url      - 仅 mode=replace_url 时生效。建议指向 1 秒静音视频。
+#   strip_tracking   - true 时清空所有 <Impression> / <Tracking> 的内容，
+#                      阻止广告主统计与计费。可与任何 mode 组合使用。
+#
+# VAST 推荐组合：
+#   最温和（不报错 + 屏蔽计费）：
+#     mode: replace_url
+#     replace_url: "https://your-cdn.example/silent-1s.mp4"
+#     strip_tracking: true
+#
+#   标准屏蔽：
+#     mode: empty
+#
+# VAST 启用前提（重要）：
+#   1. 抓包确认该站点确实有 VAST 请求（Content-Type: application/xml 或 text/xml）
+#   2. 确认响应体以 <VAST 开头
+#   3. 先在小范围启用 + 观察日志，无问题再扩大
+#
+# VAST 热加载：
+#   修改本文件后约 5 秒自动生效，无需重启 AdMask。
+#   启动日志出现 [VAST-WATCH] reloaded: N rules 即为生效。
+
+version: 1
+
+# ---------------------------------------------------------------
+# 通用广告 SDK，所有 App 共用
+# ---------------------------------------------------------------
+common:
+  block_domains:
+    # 国际通用广告/追踪 (示例占位符)
+    - "||ads.ad-network-a.example^"
+    - "||tracker.ad-network-b.example^"
+    # 国内通用 (示例占位符)
+    - "||tracker-a.example.com^"
+    - "||analytics.example.com^"
+    - "||ad-material.example.com^"           # 广告素材 CDN 示例
+    - "||sdk.ad-platform.example^"           # 广告 SDK 示例
+
+  # 通用 VAST 服务器
+  #
+  # 默认留空——VAST 是"广告服务器返回 XML"的场景，
+  # 各站点不同，不适合放 common。
+  #
+  # 如果需要"全局拦截某个广告联盟的 VAST"，在这里配：
+  # vast_rules:
+  #   - name: common-vast
+  #     hosts: [ads.ad-network.example]
+  #     path_contains: /vast
+  #     mode: empty
+  #     enabled: true
+  vast_rules: []
+
+# ---------------------------------------------------------------
+# 各 App 规则
+# ---------------------------------------------------------------
+services:
+
+  video-site-a:
+    block_domains:
+      # 上报（不是配置）
+      - "||api.video-site-a.example/track"
+      - "||track2.video-site-a.example^"
+      - "||etx.video-site-a.example^"
+
+      # 广告素材
+      - "||ad.video-site-a.example^"
+      - "||video-site-a.example/videos/other"
+
+      # 其它
+      - "||msg.ad-network.example^"
+      - "||static.video-site-a.example/common/ADS^"
+      - "||static.video-site-a.example/imgs/ad.svg^"
+
+    api_rules:
+      - name: site-a-cupid
+        hosts:
+          - "mesh.video-site-a.example"
+          - "api.video-site-a.example"
+          - "www.video-site-a.example"
+        path_contains: "/mixer"
+        clear_arrays:
+          - "adSlots[*].ads"
+        zero_numbers:
+          - "adSlots[*].duration"
+          - "adSlots[*].startTime"
+          - "adSlots[*].orderItemStartTime"
+          - "adSlots[*].orderItemEndTime"
+          - "adSlots[*].type"
+        false_bools:
+          - "isAdShow"
+          - "isAdEmptyShow"
+        set_strings:
+          timeslice: "0"
+          adnData: "{}"
+        enabled: true
+
+      # 说明：以下域名不再拦截
+      #   static.video-site-a.example/lequ/*   → UI 图标、SVG 素材，正片页面需要
+      #   emoticon.video-site-a.example      → 弹幕配置 + 表情包，拦了会断弹幕
+      #   api.video-site-a.example/mixer   → 广告配置 JSON，交给 mixer 改写
+
+    # 第三层：VAST XML 改写
+    #
+    # 示例视频站 A 的广告 API 主要是 JSON（mixer 已覆盖），
+    # VAST 是否存在待抓包验证。
+    #
+    # 抓包方法：
+    #   1. 启动 AdMask + 装 CA
+    #   2. 访问视频播放页
+    #   3. 过滤 Content-Type: application/xml 或 text/xml 的响应
+    #   4. 看响应体是否以 <VAST 开头
+    #
+    # 命中后按下面格式加（推荐"最温和"组合）：
+    # vast_rules:
+    #   - name: site-a-vast
+    #     hosts: [vast.video-site-a.example]
+    #     path_contains: /vast
+    #     mode: replace_url
+    #     replace_url: "https://your-cdn.example/silent-1s.mp4"
+    #     strip_tracking: true
+    #     enabled: true
+    #
+    # 或简单清空：
+    # vast_rules:
+    #   - name: site-a-vast
+    #     hosts: [vast.video-site-a.example]
+    #     path_contains: /vast
+    #     mode: empty
+    #     enabled: true
+    vast_rules: []
+
+    # 第四层：流广告识别
+    # hosts 后缀匹配：写 video-site-a.example 会命中 cache.video-site-a.example 等
+    # type 不填则 hls / dash 都适用
+    stream_rules:
+      - name: site-a-hls
+        type: hls
+        hosts:
+          - "video-site-a.example"
+          - "cdn.video-site-a.example"
+        ad_paths:
+          - "/ad/"
+          - "/ads/"
+          - "/advert"
+          - "/preroll"
+          - "/midroll"
+        ad_hosts:
+          - "ad.video-site-a.example"
+          - "ads.video-site-a.example"
+        score_threshold: 4
+        enabled: true
+
+  # ===============================================================
+  # 示例视频站 B
+  # ===============================================================
+  video-site-b:
+    name: "视频站 B"
+    block_domains:
+      # 广告上报
+      - "||beacon.video-site-b.example^"
+      - "||trace.video-site-b.example^"
+
+      # 广告素材
+      - "||ad-material.video-site-b.example^"
+
+      # 说明：
+      #   正片接口不动
+      #   广告 API 大多是 JSON，留给 mixer 处理
+
+    # 广告 API 可能是 JSON——但当前未抓包确认字段，
+    # 因此留空。等确认字段后按 site-a-cupid 的格式添加。
+    api_rules: []
+
+    # VAST 规则
+    #
+    # 第三方广告联盟较多，使用 VAST 的可能性较高。
+    # 抓包确认后按下面格式启用：
+    vast_rules: []
+
+    stream_rules:
+      - name: site-b-hls
+        type: hls
+        hosts:
+          - "video-site-b.example"
+        ad_paths:
+          - "/ad/"
+          - "/ads/"
+          - "/advert"
+          - "/preroll"
+        score_threshold: 4
+        enabled: true
+
+  # ===============================================================
+  # 示例视频站 C
+  # ===============================================================
+  video-site-c:
+    name: "视频站 C"
+    block_domains:
+      # 广告接口
+      - "||cm.video-site-c.example^"
+
+      # 第三方广告联盟
+      - "||ad.network-x.example^"               # 联盟 A
+      - "||ad.network-y.example^"               # 联盟 B
+
+      # 说明：
+      #   正片接口不动
+      #   DASH 分片在 upos-*.cdn.video-site-c.example，不拦
+
+    # 广告较少，无已知 JSON 广告接口
+    api_rules: []
+
+    # 广告较少，暂不配 VAST
+    vast_rules: []
+
+    stream_rules:
+      # 注意：该站的 CDN 可能在 video-cdn-passthrough.yaml 直通白名单里，
+      # 请求不经代理，因此本规则可能不会命中。
+      # 保留作为格式参考，等以后需要精确过滤时再启用。
+      - name: site-c-dash
+        type: dash
+        hosts:
+          - "cdn.video-site-c.example"
+          - "video-site-c.example"
+        ad_paths:
+          - "/ad/"
+          - "/ads/"
+          - "/advert"
+        ad_hosts: []
+        score_threshold: 4
+        enabled: true
+
+  # ===============================================================
+  # 示例视频站 D
+  # ===============================================================
+  video-site-d:
+    name: "视频站 D"
+    block_domains:
+      - "||atm.video-site-d.example^"
+      - "||valf.atm.video-site-d.example^"
+
+    # 广告 API 未抓包确认，留空
+    api_rules: []
+    vast_rules: []
+
+    # 该站走 Widevine + CBCS DRM，分片时间轴必须连续，
+    # 删分片会导致 DRM 解密链断裂、播放器报错。
+    # 这里禁用 stream_rules。
+    stream_rules: []
+
+  # ===============================================================
+  # 示例视频站 E
+  # ===============================================================
+  video-site-e:
+    name: "视频站 E"
+    block_domains:
+      # 广告接口
+      - "||ads.video-site-e.example^"
+      - "||da.video-site-e.example^"
+
+    # 广告 API 未抓包确认，留空
+    api_rules: []
+    vast_rules: []
+
+    stream_rules:
+      - name: site-e-hls
+        type: hls
+        hosts:
+          - "video-site-e.example"
+        ad_paths:
+          - "/ad/"
+          - "/ads/"
+          - "/advert"
+          - "/preroll"
+        score_threshold: 4
+        enabled: true
