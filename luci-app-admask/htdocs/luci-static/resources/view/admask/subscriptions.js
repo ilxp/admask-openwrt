@@ -6,7 +6,15 @@
 
 return view.extend({
 	load: function() {
-		return uci.load('admask');
+		return uci.load('admask').then(function() {
+			// 1. 把配置文件里之前丢失 type 的规则源在内存中补全
+			var sources = uci.sections('admask', 'source') || [];
+			sources.forEach(function(s) {
+				if (!s.type) {
+					uci.set('admask', s['.name'], 'type', 'remote');
+				}
+			});
+		});
 	},
 
 	render: function() {
@@ -31,14 +39,36 @@ return view.extend({
 		o.value('remote', _('Online Subscription'));
 		o.value('file', _('Local File'));
 		o.default = 'remote';
+		o.rmempty = false;
+		
+		// 2. 界面回显兜底
+		o.cfgvalue = function(section_id) {
+			return uci.get('admask', section_id, 'type') || 'remote';
+		};
+		
+		// 3. 渲染时强行注入内存（防止 GridSection 新增行时前端默认值不提交的 Bug）
+		o.renderWidget = function(section_id, option_index, cfgvalue) {
+			var node = form.ListValue.prototype.renderWidget.apply(this, arguments);
+			if (section_id && !uci.get('admask', section_id, 'type')) {
+				uci.set('admask', section_id, 'type', 'remote');
+			}
+			return node;
+		};
+		
+		// 4. 保存时终极兜底
+		o.write = function(section_id, value) {
+			uci.set('admask', section_id, 'type', value || 'remote');
+		};
 
 		o = s.option(form.Value, 'url', _('Subscription URL'));
 		o.depends('type', 'remote');
 		o.placeholder = 'https://example.com/easylist.txt';
+		o.rmempty = false;
 
 		o = s.option(form.Value, 'path', _('Local Path'));
 		o.depends('type', 'file');
 		o.placeholder = '/etc/admask/custom.txt';
+		o.rmempty = false;
 
 		o = s.option(form.Value, 'refresh', _('Update Interval'));
 		o.default = '24h';
